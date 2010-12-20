@@ -184,6 +184,7 @@ I._included = {};
  * Lookup for which tags should be written with the cjsexec=false attribute.
  * Note that if you require the same file multiple times with this pref set
  * differently only one will end up here.
+ * @private
  */
 I._noExec = {};
 /**
@@ -296,7 +297,8 @@ I._writeScriptTag = function(config) {
     }
 };
 /**
- * Assemble and return a string for .write based on the config object
+ * Assemble and return a string for .write based on the config objects
+ * @private
  */
 I._tagString = function(config) {
     var str = '<script type="text/cjs"cjssrc="${src}" ${exec}></script>';
