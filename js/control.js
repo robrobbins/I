@@ -34,9 +34,18 @@ CJS.start = function() {
 
 	// Process scripts now or later depending on the defer setting.
 	if ( CJS.defer ) {
-		CJS.addHandler(window, 'load', CJS.processScripts);
+		// It's possible that window.onload already fired, in which case we
+		// need to kickoff processScripts immediately.
+		if ( "undefined" != typeof(document.readyState) && "complete" === document.readyState ) {
+			CJS.processScripts();
+		}
+		else {
+			CJS.addHandler(window, 'load', CJS.processScripts);
+		}
 	}
 	else {
+		// TODO - We need to add a mechanism to do multiple passes before
+		// we support calling processScripts before the DOM is complete.
 		alert("Immediate processing is not currently supported.");
 		CJS.processScripts();
 	}
@@ -281,7 +290,6 @@ CJS.execScript = function(src, onload) {
 			  break; 
 			default: 
 			  ponload = new Function();
-              break;
 		}
 		return ponload;
 		
@@ -305,7 +313,6 @@ CJS.execScript = function(src, onload) {
 	s1.parentNode.insertBefore(se, s1);
 };
 
-
 // Eval a string of JavaScript in the proper context.
 CJS.eval = function(code) {
 	//CJS.dprint("evaling: " + code.substring(0, 64));
@@ -322,11 +329,6 @@ CJS.eval = function(code) {
 
 	//CJS.dprint("eval exit");
 };
-
-
-
-
-
 
 // 
 // UTILITY FUNCTIONS
@@ -483,4 +485,7 @@ CJS.docwriteScript = function(textScript) {
 	}
 };
 
+
+
 CJS.start();
+
