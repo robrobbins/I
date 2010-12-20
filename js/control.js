@@ -51,6 +51,7 @@ CJS.start = function() {
 	}
 };
 
+
 // Find all scripts with a "text/cjs" type.
 CJS.findScripts = function() {
 	var aScripts = document.getElementsByTagName('script');
@@ -64,6 +65,7 @@ CJS.findScripts = function() {
 	}
 	//CJS.dprint("found " + CJS.aScripts.length + " CJS scripts");
 };
+
 
 // 
 // DOWNLOAD PHASE
@@ -81,6 +83,7 @@ CJS.downloadScripts = function() {
 	}
 };
 
+
 // Download a script in such a way that it's not executed immediately.
 CJS.downloadScript = function(url) {
 	CJS.dprint("downloading " + url);
@@ -92,6 +95,7 @@ CJS.downloadScript = function(url) {
 		CJS.downloadScriptObject(url);
 	}
 };
+
 
 // Download a script as an image.
 // This puts it in the browser's cache, but doesn't execute it.
@@ -162,6 +166,7 @@ CJS.execCallback = function(url) {
 CJS.processScripts = function() {
 	CJS.processNextScript();
 };
+
 
 CJS.processNextScript = function() {
 	//CJS.dprint("processNextScript: enter");
@@ -236,6 +241,7 @@ CJS.processNextScript = function() {
     */
 };
 
+
 // Eval the code in an inlined script.
 CJS.processInlineScript = function(script) {
 	//CJS.dprint("processInlineScript: enter");
@@ -246,6 +252,7 @@ CJS.processInlineScript = function(script) {
 	CJS.eval(code);
 };
 
+
 // If downloaded then add the external script as a real script DOM element.
 CJS.processExternalScript = function(script, callback) {
 	//CJS.dprint("processExternalScript: enter");
@@ -254,6 +261,7 @@ CJS.processExternalScript = function(script, callback) {
 	CJS.dprint("processExternalScript: processing script " + src);
 	CJS.execScript(src, callback);
 };
+
 
 // Insert a script DOM element.
 // Presumably the src has already been downloaded and is in the cache.
@@ -305,6 +313,7 @@ CJS.execScript = function(src, onload) {
 	s1.parentNode.insertBefore(se, s1);
 };
 
+
 // Eval a string of JavaScript in the proper context.
 CJS.eval = function(code) {
 	//CJS.dprint("evaling: " + code.substring(0, 64));
@@ -321,6 +330,11 @@ CJS.eval = function(code) {
 
 	//CJS.dprint("eval exit");
 };
+
+
+
+
+
 
 // 
 // UTILITY FUNCTIONS
@@ -349,6 +363,7 @@ CJS.init = function() {
 	document.write = CJS.docwrite;      // override document.write
 };
 
+
 // Return the URL of the script that has been converted to CJS.
 CJS.getAttribute = function(elem, name) {
 	var attrs = elem.attributes;
@@ -362,6 +377,7 @@ CJS.getAttribute = function(elem, name) {
 
 	return undefined;
 };
+
 
 // Wrapper for addEventListener and attachEvent.
 CJS.addHandler = function(elem, sType, fn, capture) {
@@ -382,6 +398,7 @@ CJS.addHandler = function(elem, sType, fn, capture) {
 		}
 	}
 };
+
 
 // Dynamically define dprint debug logging function.
 if ( "undefined" != typeof(console) && "undefined" != typeof(console.log) ) {
@@ -411,6 +428,7 @@ else {
 	};
 	*/
 };
+
 
 //
 // Override document.write
@@ -472,6 +490,8 @@ CJS.docwriteScript = function(textScript) {
 	    // TODO - handle inline SCRIPT code
 	}
 };
+
+
 
 CJS.start();
 
