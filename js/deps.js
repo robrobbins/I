@@ -4,4 +4,4 @@
 // Node.js depWriter utility, so you don't have to set these by hand though you
 // can if you wish
 I.addDependency('vendor/jquery.js', ['jquery'], [], true);
-I.addDependency('site/test.js', ['TEST'], ['jquery']);
+I.addDependency('site/test.js', ['TEST'], ['jquery'], false, true);

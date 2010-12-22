@@ -32,7 +32,9 @@ I.global.BASE_PATH = 'js/';
  */
 I.doc = document;
 /**
- * Adds a dependency from a file to the files it requires.
+ * Adds a dependency from a file to the files it requires. Reads the async or
+ * defer attributes if present in I.require() and sets them in the
+ * corresponding dependency list lookup hash 
  * @param {string} relPath The path to the js file.
  * @param {Array} provides An array of strings with the names of the objects
  * this file provides.
@@ -40,6 +42,7 @@ I.doc = document;
  * this file requires.
  * @param {Boolean} async should an entry be placed in the async hash
  * @param {Boolean} defer should an entry be placed in the defer hash
+ * @link I.require
  */
 I.addDependency = function(relPath, provides, requires, async, defer) {
     var provide, require;
@@ -66,6 +69,7 @@ I.addDependency = function(relPath, provides, requires, async, defer) {
  * token is defined as a namespace
  * @param ns The namespace to check for
  * @param fn The function to call when ns = true
+ * @return {object} this
  */
 I.amDefined = function(ns, fn) {
     if(this.getObjectByName(ns)) {
@@ -83,11 +87,8 @@ I.amDefined = function(ns, fn) {
  */
 I._amWaiting = [];
 /**
- * manage the setTimeout creation and deletion when checking the wait-list
- * @private
- */
-/**
  * Run through the wait list and null it out
+ * @private
  */
 I._waitTimer = function() {
     if(this._timer) {
@@ -95,7 +96,7 @@ I._waitTimer = function() {
     }
     var tmp = this._amWaiting;
     this._amWaiting = null;
-    var itr = function() {
+    /** @private */ var itr = function() {
         if (tmp && tmp.length) {
             var obj, i=0;
             while ((obj = tmp[i++])) {
@@ -195,10 +196,11 @@ I.provide = function(name) {
 };
 /**
  * Implements a system for the dynamic resolution of dependencies
- * @param {string} path module to include, should match a 'provide'
+ * @param {string} module Module to include, should match a 'provide'
  * in deps.js
- * @param {Boolean} noExec Should cjsexec=false be set on this script 
+ * @param {Boolean} async Should the async attribute be set on this script 
  * tag when written
+ * @param{Boolean} defer Should the defer attribute be written
  */
 I.require = function(module, async, defer) {
     // if the object already exists we do not need do do anything
