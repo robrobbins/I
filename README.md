@@ -73,21 +73,40 @@ Take the deps.js from this project:
     I.addDependency('vendor/jquery.js', ['jquery'], [], true);
     I.addDependency('site/test.js', ['TEST'], ['jquery'], false, true);
 
-The first tells i.js that any 
+The first tells i.js that any:
+
     I.require('jquery', true);
+
 Can be resolved by looking in *(base_path)/vendor/* for *jquery.js*. This is
-what gets written to the *src* attribute of the tag. 
+what gets written to the *src* attribute of the tag. The empty array indicates
+that this module has no stated dependencies. The true tells I to append the 
+async attribute to the script tag.
+
+The second instructs I to, when encountering an:
+
+    I.require('TEST', false, true);
+
+To first load the dependency named 'jquery' (the 3rd arg is an array of dependencies), then loading
+the module providing 'TEST' which is found at *base_path/site/test.js*. This
+tag should have the *defer* attribute set
 
 #####Note
 
 The boolean values in the the deps.js file are there because of the boolean
 values in your I.require() statements. The *depWriter* utility sees them and
 writes them to deps.js accordingly. Don't remove them from your source files
-however as later passes with *depWriter* would overwrite them.
+(though you could once deps.js is written)however as later passes with *depWriter* 
+would overwrite them.
 
 ####Also
 
 You can require a file multiple times but the first seen definition is what
 will be used by subsequent requires.
 
+###NO depwriter.js yet
 
+I am a few working days away from the *depWriter.js* Node utility being
+finished so for now just append entries into the deps.js file by hand.
+Remember, the args are:
+
+    I.addDependency(path-to-file, what-it-provides, what-it-requires, async, defer);
