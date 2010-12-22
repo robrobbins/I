@@ -1,7 +1,6 @@
 /**
- * @fileOverview Dependency management with Steve Souder's Control.js
- * baked right in...Largely based on the code from Google's Closure
- * Library
+ * @fileOverview Dependency management with magical powers
+ * Largely based on the code from Google's Closure Library
  * @author <a href="www.github.com/robrobbins/I">Rob Robbins</a>
  * @version 0.0.1
  */
@@ -39,8 +38,10 @@ I.doc = document;
  * this file provides.
  * @param {Array} requires An array of strings with the names of the objects
  * this file requires.
+ * @param {Boolean} async should an entry be placed in the async hash
+ * @param {Boolean} defer should an entry be placed in the defer hash
  */
-I.addDependency = function(relPath, provides, requires) {
+I.addDependency = function(relPath, provides, requires, async, defer) {
     var provide, require;
     var path = relPath.replace(/\\/g, '/');
     var deps = this._dependencies;
@@ -57,6 +58,52 @@ I.addDependency = function(relPath, provides, requires) {
         }
         deps.requires[path][require] = true;
     }
+    if(async) {this._async[path] = true;}
+    if(defer) {this._defer[path] = true;}
+};
+/**
+ * Maintains a queue of functions to call when the passed in
+ * token is defined as a namespace
+ * @param ns The namespace to check for
+ * @param fn The function to call when ns = true
+ */
+I.amDefined = function(ns, fn) {
+    if(this.getObjectByName(ns)) {
+        fn.call(this.doc, this);
+    } else {
+        this._amWaiting.push({a:ns, b:fn});
+        this._waitTimer();
+    }
+    return this;
+};
+/**
+ * Queue which holds a callback function which will get executed When
+ * its token is defined as a namespace
+ * @private
+ */
+I._amWaiting = [];
+/**
+ * manage the setTimeout creation and deletion when checking the wait-list
+ * @private
+ */
+/**
+ * Run through the wait list and null it out
+ */
+I._waitTimer = function() {
+    if(this._timer) {
+        clearTimeout(this._timer);
+    }
+    var tmp = this._amWaiting;
+    this._amWaiting = null;
+    var itr = function() {
+        if (tmp && tmp.length) {
+            var obj, i=0;
+            while ((obj = tmp[i++])) {
+                I.amDefined(obj.a, obj.b);
+            }
+        }
+    };
+    this._timer = setTimeout(itr, 100);
 };
 /**
  * Builds an object structure for the provided namespace path,
@@ -93,7 +140,7 @@ I._exportPath = function(name, obj, scope) {
   }
 };
 /**
- * Returns an object based on its fully qualified external name.  If you are
+ * Returns an object based on its fully qualified external name.
  * @param {string} name The fully qualified name.
  * @param {Object=} scope The object within which to look. Default is I.global.
  * @return {Object} The object or, if not found, null.
@@ -153,20 +200,23 @@ I.provide = function(name) {
  * @param {Boolean} noExec Should cjsexec=false be set on this script 
  * tag when written
  */
-I.require = function(path, noExec) {
+I.require = function(module, async, defer) {
     // if the object already exists we do not need do do anything
-    if (I.getObjectByName(path)) {
+    if (I.getObjectByName(module)) {
         return;
     }
-    var _path = this._getPathFromDeps(path);
+    var _path = this._getPathFromDeps(module);
     if (_path) {
         this._included[_path] = true;
-        if(noExec) {
-            this._noExec[_path] = 'cjsexec=false'; 
+        if(async) {
+            this._async[_path] = true; 
+        }
+        if(defer) {
+            this._defer[_path] = true;
         }
         this._writeScripts();
     } else {
-        var errorMessage = 'I.require could not find: ' + path;
+        var errorMessage = 'I.require could not find: ' + module;
         if (this.global.console) {
             this.global.console['error'](errorMessage);
         }
@@ -181,12 +231,19 @@ I.require = function(path, noExec) {
  */
 I._included = {};
 /**
- * Lookup for which tags should be written with the cjsexec=false attribute.
+ * Lookup for which tags should be written with the async attribute.
  * Note that if you require the same file multiple times with this pref set
- * differently only one will end up here.
+ * they will overwrite.
  * @private
  */
-I._noExec = {};
+I._async = {};
+/**
+ * Lookup for which tags should be written with the defer attribute.
+ * Note that if you require the same file multiple times with this pref set
+ * they will overwrite.
+ * @private
+ */
+I._defer = {};
 /**
  * This object is used to keep track of dependencies and other data that is
  * used for loading scripts
@@ -226,7 +283,7 @@ I._getPathFromDeps = function(path) {
 I._ns = {};
 /**
  * Resolves dependencies based on the dependencies added using addDependency
- * and calls _writeScriptTag in the correct order.
+ * and calls _cjsDownload in the correct order.
  * @private
  */
 I._writeScripts = function() {
@@ -275,48 +332,30 @@ I._writeScripts = function() {
         if(scripts[i]) {
             this._writeScriptTag({
                 src: this.basePath + scripts[i],
-                exec: this._noExec[scripts[i]] || ''
+                async: this._async[scripts[i]] || false,
+                defer: this._defer[scripts[i]] || false
             });
+            
         } else {
             throw Error('Undefined script input');
         }
     }
 };
 /**
- * Writes a script tag with CJS attributes if 
+ * Writes a script tag (with async or defer attributes) if 
  * that script hasn't already been added to the document.   
- * @param {string} src Script source.
- * @param {Object} config Hash of CJS attributes
+ * @param {Object} config Hash of attributes
  * @private
  */
 I._writeScriptTag = function(config) {
-    // doc.write is fine here as i.js isn't async loaded
     if(!this._dependencies.written[config.src]) {
         this._dependencies.written[config.src] = true;
-        this.doc.write(this._tagString(config));
+        var script = this.doc.createElement('SCRIPT');
+        script.src = config.src;
+        if(config.async) {script.async = 'async';}
+        if(config.defer) {script.defer = 'defer';}
+        this.doc.getElementsByTagName('HEAD')[0].appendChild(script);
     }
-};
-/**
- * Assemble and return a string for .write based on the config objects
- * @private
- */
-I._tagString = function(config) {
-    var str = '<script type="text/cjs"cjssrc="${src}" ${exec}></script>';
-    return str.replace(/\$\{(.+?)\}/g,
-        function(match, key) {
-            return config[key];
-        }
-    );
 };
 // set the base path...
 I._getPath();
-// async load Control.js
-var cjsscript = I.doc.createElement('script');
-cjsscript.src = I.basePath + "control.js";
-var cjssib = document.getElementsByTagName('script')[0];
-cjssib.parentNode.insertBefore(cjsscript, cjssib);
-// call for deps
-I._writeScriptTag({
-    src: I.basePath + 'deps.js', 
-    exec: ''
-});

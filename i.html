@@ -14,10 +14,8 @@
                 display:none;
             }
         </style>
-        <script type="text/javascript" src="js/i.js"></script>
-        <script type="text/cjs">
-            I.require('TEST');
-        </script>
+        <script src="js/i.js"></script>
+        <script src="js/deps.js"></script>
 	</head>
 	<body>
         <div id="container">
@@ -52,6 +50,9 @@
                 </ul>
             </div>
         </div>
+        <script>
+            I.require('TEST', false, true);
+        </script>
     </body>
 </html>
 
