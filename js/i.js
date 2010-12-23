@@ -65,20 +65,37 @@ I.addDependency = function(relPath, provides, requires, async, defer) {
     if(defer) {this._defer[path] = true;}
 };
 /**
- * Maintains a queue of functions to call when the passed in
- * token is defined as a namespace
- * @param ns The namespace to check for
+ * If a specified namespace is not defined yet this method
+ * maintains a queue of functions to call when it becomes available
+ * @param {String|Array} ns The namespace to check for, either 
+ * a string or an array of strings
  * @param fn The function to call when ns = true
- * @return {object} this
  */
 I.amDefined = function(ns, fn) {
-    if(this.getObjectByName(ns)) {
+    var isDefined = false;
+    /** @private */ var tc = function(t) {
+        return typeof I.getObjectByName(t) === 'undefined' ?
+            false : true;
+    };
+    // what should be the 2 use cases with no error checking.
+    // TODO should we typecheck for erroneous 'ns' args?
+    if(typeof ns === 'string') {isDefined = tc(ns);} else {
+        for(var i=0, len=ns.length; i<len; i++) {
+            // we need to break out if any are false
+            if(tc(ns[i]) === true) {
+                isDefined = true;
+            } else {
+                isDefined = false;
+                break;
+            }
+        }
+    }
+    if(isDefined) {
         fn.call(this.doc, this);
     } else {
         this._amWaiting.push({a:ns, b:fn});
         this._waitTimer();
     }
-    return this;
 };
 /**
  * Queue which holds a callback function which will get executed When
@@ -87,15 +104,16 @@ I.amDefined = function(ns, fn) {
  */
 I._amWaiting = [];
 /**
- * Run through the wait list and null it out
+ * Run through the wait list and empty it
  * @private
  */
 I._waitTimer = function() {
     if(this._timer) {
         clearTimeout(this._timer);
+        this._timer = null;
     }
     var tmp = this._amWaiting;
-    this._amWaiting = null;
+    this._amWaiting = [];
     /** @private */ var itr = function() {
         if (tmp && tmp.length) {
             var obj, i=0;
