@@ -26,7 +26,7 @@ I.basePath = '';
  * A hook to override basePath
  * @type {string|undefined}
  */
-I.global.BASE_PATH = 'js/';
+I.global.BASE_PATH;
 /**
  * Reference for the current document.
  */
@@ -189,8 +189,8 @@ I._getPath = function() {
     for (var i = scripts.length - 1; i >= 0; --i) {
         var src = scripts[i].src;
         var l = src.length;
-        if(src.substr(l - 7) === 'i.js') {
-            I.basePath = src.substr(0, l - 7);
+        if(src.substr(l - 4) === 'i.js') {
+            I.basePath = src.substr(0, l - 4);
             return;
         }
     }
