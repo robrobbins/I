@@ -72,57 +72,48 @@ I.addDependency = function(relPath, provides, requires, async, defer) {
  * @param fn The function to call when ns = true
  */
 I.amDefined = function(ns, fn) {
-    var isDefined = false;
-    /** @private */ var tc = function(t) {
-        return typeof I.getObjectByName(t) === 'undefined' ?
-            false : true;
-    };
-    // what should be the 2 use cases with no error checking.
     // TODO should we typecheck for erroneous 'ns' args?
-    if(typeof ns === 'string') {isDefined = tc(ns);} else {
-        for(var i=0, len=ns.length; i<len; i++) {
-            // we need to break out if any are false
-            if(tc(ns[i]) === true) {
-                isDefined = true;
-            } else {
-                isDefined = false;
-                break;
-            }
-        }
-    }
-    if(isDefined) {
-        fn.call(this.doc, this);
+    // TODO This should be able to handle an array: [ns,ns]
+    if(this._amLoaded[ns]) { // cheaper than .getObjectByName(ns)
+        fn.call();
     } else {
-        this._amWaiting.push({a:ns, b:fn});
-        this._waitTimer();
+        // key = ns, val = [fn,...]
+        // val needs to be an array for multiple dependencies
+        if (ns in this._amWaiting === false) {
+            this._amWaiting[ns] = [];
+        } 
+        this._amWaiting[ns].push(fn);
     }
 };
 /**
- * Queue which holds a callback function which will get executed When
- * its token is defined as a namespace
+ * The queue for waiting namespaces and their callbacks
  * @private
  */
-I._amWaiting = [];
+I._amWaiting = {};
 /**
- * Run through the wait list and empty it
+ * A lookup for loaded scripts by their provided tokens
  * @private
  */
-I._waitTimer = function() {
-    if(this._timer) {
-        clearTimeout(this._timer);
-        this._timer = null;
-    }
-    var tmp = this._amWaiting;
-    this._amWaiting = [];
-    /** @private */ var itr = function() {
-        if (tmp && tmp.length) {
-            var obj, i=0;
-            while ((obj = tmp[i++])) {
-                I.amDefined(obj.a, obj.b);
+I._amLoaded = {};
+/**
+ * Allow newly loaded scripts to check for callbacks.
+ * Remember, <this> is the script element...
+ * @private
+ */
+I._waitListener = function() {
+    // use the path to get an object
+    var obj = I._getDepsFromPath(this.getAttribute('path'));
+    // the obj has 'provide' tokens as keys
+    for(var k in obj) {
+        // TODO deal with multiple dependency .amDefined() calls
+        if(k in I._amWaiting) {
+            for(var fn; fn = I._amWaiting[k].shift(); ) {
+                fn.call();   
             }
         }
-    };
-    this._timer = setTimeout(itr, 100);
+        // done in-loop to handle multiple provides per file
+        I._amLoaded[k] = true;
+    }
 };
 /**
  * Builds an object structure for the provided namespace path,
@@ -282,13 +273,24 @@ written: {} // used to keep track of script files we have written
 /**
  * Looks at the dependency paths and tries to determine the script file that
  * fulfills a particular path.
- * @param {string} path In the form I.namespace.Class or project.script.
+ * @param {string} path In the form I.namespace.Class or project.script
  * @return {?string} Url corresponding to the path, or null.
  * @private
  */
 I._getPathFromDeps = function(path) {
     if (path in this._dependencies.nameToPath) {
         return this._dependencies.nameToPath[path];
+    } else {
+        return null;
+    }
+};
+/**
+ * Get the namespace(s) provided by a file
+ * @private
+ */
+I._getDepsFromPath = function(path) {
+    if (path in this._dependencies.pathToNames) {
+        return this._dependencies.pathToNames[path];
     } else {
         return null;
     }
@@ -352,6 +354,7 @@ I._writeScripts = function() {
         if(scripts[i]) {
             this._writeScriptTag({
                 src: this.basePath + scripts[i],
+                path: scripts[i],
                 async: this._async[scripts[i]] || false,
                 defer: this._defer[scripts[i]] || false
             });
@@ -372,10 +375,15 @@ I._writeScriptTag = function(config) {
         this._dependencies.written[config.src] = true;
         var script = this.doc.createElement('SCRIPT');
         script.src = config.src;
-        if(config.async) {script.async = 'async';}
-        if(config.defer) {script.defer = 'defer';}
+        script.setAttribute('path', config.path);
+        if(config.async) {script.async = true;}
+        if(config.defer) {script.defer = true;}
+        // call _waitListener when loaded
+        script.onload = I._waitListener;
         this.doc.getElementsByTagName('HEAD')[0].appendChild(script);
     }
 };
 // set the base path...
 I._getPath();
+
+
