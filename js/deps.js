@@ -3,5 +3,5 @@
 // the path-to-file is relative to the i.js file. All of this is done by the
 // Node.js depWriter utility, so you don't have to set these by hand though you
 // can if you wish
-I.addDependency('vendor/jquery.js', ['jquery'], [], true);
+I.addDependency('vendor/jquery.js', ['jQuery'], [], true);
 I.addDependency('site/test.js', ['TEST'], ['jquery'], false, true);

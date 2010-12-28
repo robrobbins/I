@@ -3,7 +3,7 @@
 // creates a 'namespace'
 I.provide('TEST');
 // make jquery avail. true = use async tag
-I.require('jquery', true);
+I.require('jQuery', true);
 
 TEST.deGreen = function() {
     $('#footer').find('li').removeClass('green');
