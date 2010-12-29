@@ -44,35 +44,19 @@ example, look at the test.js page in this project.
 
 The code using jquery will probably try to execute before the jquery
 object itself is finished initializing. I.amDefined waits for the passed in token, 
-'$' in this case, to be defined then executes the function.
+'jQuery' in this case, to be defined then executes the function.
 
 ####Array of tokens
 
-Many times a script will have multiple dependencies so you can pass an array of
-string names to I.amDefined as the first arg:
+Still in development is the ability to provide an array of tokens as arguments
+to I.amDefined rather than just a single string. The same functionality until
+then can be acheved by simply wrapping a call to I.amdefined in another:
 
-    I.amDefined(['TEST', 'jQuery'], function() {
-        $('#footer').find('li').addClass('green');
-        $('#btnTest').click(function(){TEST.deGreen();});
+    I.amDefined('Foo', function() {
+        I.amDefined('Bar', function() {
+            alert ('Yeah, Foo AND Bar!');    
+        })    
     });
-
-If any of the tokens are undefined the code will be 'wait-listed' until all of
-the args are defined. I's definition of defined is simply that the passed in
-arg is not undefined as commonly you will be looking for Objects (namespaces)
-or Functions (constructors), but you could be looking for Boolean values or
-strings.
-
-#####Note
-
-The next revision of i.js adds possibly one feature to .amDefined().
-
-1. A third arg may be added, 'doc_ready'. If true I will check for the existence of
-   the passed in tokens AND if the DOM is ready. I am testing this, as I don't 
-   want to actually add this code to i.js (I needs to be as small as possible), 
-   just use whatever library the user is loading. Meaning there would be a way
-   to tell i.js what 'DOM ready' to look for (jquery's 'isReady' and such). In
-   use this isn't much of a problem as if you are deferring your scripts as you
-   should the dom will be ready (async however may need this...)
 
 ###Deps.js
 
