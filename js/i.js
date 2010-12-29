@@ -72,17 +72,45 @@ I.addDependency = function(relPath, provides, requires, async, defer) {
  * @param fn The function to call when ns = true
  */
 I.amDefined = function(ns, fn) {
-    // TODO should we typecheck for erroneous 'ns' args?
-    // TODO This should be able to handle an array: [ns,ns]
-    if(this._amLoaded[ns]) { // cheaper than .getObjectByName(ns)
-        fn.call();
+    var nsa, nss, fna, tmp=[];
+    // Normalize the inputs
+    if(typeof ns === 'string') {
+        nsa = ns.split('>');
     } else {
-        // key = ns, val = [fn,...]
-        // val needs to be an array for multiple dependencies
-        if (ns in this._amWaiting === false) {
-            this._amWaiting[ns] = [];
-        } 
-        this._amWaiting[ns].push(fn);
+        nsa = ns;
+    }
+    if(typeof fn === 'function') {
+        fna = [fn];
+    } else {
+        fna = fn;
+    }
+    // clear out any defined tokens first
+    for(var n; n = nsa.shift(); ) {
+        if(this._amLoadedChk(n)) {
+            var pass;
+        } else {
+            tmp.push(n);
+        }
+    }
+    // all are defined, we're done here
+    if(!tmp.length) {
+        for(var f; f = fna.shift(); ) {
+            f.call(this.global);    
+        }
+    } else {
+        // one left, assign to nss as is
+        if(tmp.length === 1) {nss = tmp[0];}
+        // multiple left, make a composite key and assign it to nss
+        else {nss = tmp.join('>');}
+        // key = nss, val = [fn,...]
+        // val needs to be an array for multiple callbacks
+        // waiting on the same ns or combination of them
+        if (!this._amWaitingChk(nss)) {
+            this._amWaiting[nss] = [];
+        }
+        for(var cb; cb = fna.shift(); ) {
+            this._amWaiting[nss].push(cb); 
+        }
     }
 };
 /**
@@ -91,10 +119,24 @@ I.amDefined = function(ns, fn) {
  */
 I._amWaiting = {};
 /**
- * A lookup for loaded scripts by their provided tokens
+ * Check _amWaiting for a given namespace
+ * @private
+ */
+I._amWaitingChk = function(ns) {
+    return ns in this._amWaiting;
+};
+/**
+ * A lookup for loaded scripts by their provided namespaces
  * @private
  */
 I._amLoaded = {};
+/**
+ * Check _amLoaded for a given namespace
+ * @private
+ */
+I._amLoadedChk = function(ns) {
+    return ns in this._amLoaded;
+};
 /**
  * Allow newly loaded scripts to check for callbacks.
  * Remember, <this> is the script element...
@@ -105,14 +147,17 @@ I._waitListener = function() {
     var obj = I._getDepsFromPath(this.getAttribute('path'));
     // the obj has 'provide' tokens as keys
     for(var k in obj) {
-        // TODO deal with multiple dependency .amDefined() calls
-        if(k in I._amWaiting) {
-            for(var fn; fn = I._amWaiting[k].shift(); ) {
-                fn.call();   
-            }
-        }
         // done in-loop to handle multiple provides per file
         I._amLoaded[k] = true;
+    }
+    // push the wait list through amDefined
+    var cp = I._amWaiting;
+    // inf loop === bad
+    I._amWaiting = {};
+    for(var p in cp) {
+        if(cp.hasOwnProperty(p)) {
+            I.amDefined(p, cp[p]);
+        }
     }
 };
 /**
@@ -385,5 +430,6 @@ I._writeScriptTag = function(config) {
 };
 // set the base path...
 I._getPath();
+
 
 

@@ -48,15 +48,14 @@ object itself is finished initializing. I.amDefined waits for the passed in toke
 
 ####Array of tokens
 
-Still in development is the ability to provide an array of tokens as arguments
-to I.amDefined rather than just a single string. The same functionality until
-then can be acheved by simply wrapping a call to I.amdefined in another:
+You can pass an array of namespaces as well:
 
-    I.amDefined('Foo', function() {
-        I.amDefined('Bar', function() {
-            alert ('Yeah, Foo AND Bar!');    
-        })    
+    I.amDefined(['Foo', 'Bar'], function() {
+        // yeah, foo and bar are loaded   
     });
+
+Make sure to use the namespace that is actually provided in a call to
+I.provide() or listed in the 'provides' array in the deps.js file
 
 ###Deps.js
 
