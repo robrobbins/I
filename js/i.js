@@ -425,6 +425,13 @@ I._writeScriptTag = function(config) {
         if(config.defer) {script.defer = true;}
         // call _waitListener when loaded
         script.onload = I._waitListener;
+        // IE
+        script.onreadystatechange = function() {
+            if(script.readyState == 'complete') {
+                // this === script
+                I._waitListener.call(script);
+            }
+        };
         this.doc.getElementsByTagName('HEAD')[0].appendChild(script);
     }
 };
