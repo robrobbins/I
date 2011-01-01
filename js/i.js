@@ -428,7 +428,6 @@ I._writeScriptTag = function(config) {
         // IE
         script.onreadystatechange = function() {
             if(script.readyState == 'complete') {
-                // this === script
                 I._waitListener.call(script);
             }
         };
@@ -437,6 +436,3 @@ I._writeScriptTag = function(config) {
 };
 // set the base path...
 I._getPath();
-
-
-
