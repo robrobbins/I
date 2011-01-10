@@ -15,7 +15,7 @@ Creates this global level nested object:
         bar:{}    
     }
 
-###I.Require(module, async, defer)
+###I.Require(something, async, defer)
 
     I.require('jquery', true);
 
@@ -59,8 +59,9 @@ I.provide() or listed in the 'provides' array in the deps.js file
 
 ###Deps.js
 
-There is a forthcoming Node.js utility program which reads your source code
-recursively, starting at a specified directory, 
+This is a Ruby utility program which reads your source code
+recursively, starting at your root directory (well, the directory you place it 
+in which should be the root of your site), 
 looking for I.provide(...) and I.require(...) statements. It uses these to
 calculate and print out a file named *deps.js*. This file contains multiple
 calls to I.addDependency(...) which in turn tell I.require() where named
@@ -92,7 +93,7 @@ tag should have the *defer* attribute set
 The boolean values in the the deps.js file are there because of the boolean
 values in your I.require() statements. The *depWriter* utility sees them and
 writes them to deps.js accordingly. Don't remove them from your source files
-(though you could once deps.js is written)however as later passes with *depWriter* 
+(though you could once deps.js is written) however as later passes with *depWriter* 
 would overwrite them.
 
 ####Also
@@ -100,10 +101,53 @@ would overwrite them.
 You can require a file multiple times but the first seen definition is what
 will be used by subsequent requires.
 
-###NO depwriter.js yet
+###Depwriter
 
-I am a few working days away from the *depWriter.js* Node utility being
-finished so for now just append entries into the deps.js file by hand.
-Remember, the args are:
+A ruby utility program that scans your directories by filetypes (configurable, 
+for example .js and .erb) searching for I.provide() and/or I.require() calls. The
+presence of these statements signals to the Depwriter that they are dependencies 
+and should be handled. If a file *provides* a namespace we call it a provider and 
+note its path relative to *i.js*. In the case of a *require* we check that the 
+*provider* is present and also if the *provider* should be loaded *async* or 
+be *deferred*.
 
-    I.addDependency(path-to-file, what-it-provides, what-it-requires, async, defer);
+####Third Party Libraries
+In the case of third-party libraries (jquery for example) that do not contain
+I.provide() / I.require() statements I have included the ability to identify 
+directories which hold scripts that you want added as dependencies regardless.
+Any scripts found in those folders will be added as *providers*. You can then
+require them by their script name minus the extension:
+
+	I.require('jquery')
+	
+Note that we are not using the actual namespace provided by the file (that would 
+have been 'jQuery' or '$') as we do with our own files.
+
+This is definitely the Alpha release of Depwriter as it is in a very raw state, but
+you can use it now if you follow a couple of simple set-up steps (see the source).
+    
+1. Drop the 'depwriter.rb' file into the root of your site
+2. Put the 'depruby' folder anywhere in your site, just set the path in 
+depwriter accordingly (see the source)
+3. Set the relative path to *i.js* from root (see source)
+4. Set the *'ven_dirs'* instructing Depwriter to include third party 
+libraries in those directories, even though they do not contain
+*I.provide / I.require* statements
+
+Once you've done that, cd into the root of your project and enter:
+	
+	ruby depwriter.rb
+	
+This will result in the *deps.js* file being written and placed into the 
+directory where i.js is.
+
+###Blog Posts / Screencasts coming
+
+I'll do some this week.
+
+###Forthcoming Changes
+
+I'll probably move the 4 configuration steps into a .yaml file and load them from
+there Once. 
+	
+	

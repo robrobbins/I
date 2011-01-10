@@ -1,0 +1,139 @@
+require 'set'
+require 'Dependant'
+
+module Dependencies
+  # a list of dependency objects
+  @all = []
+  # these have provide / require statements
+  @matched = {}
+  # how the dependencies should be loaded
+  @req_attr = {}
+  # namespaces which have been found
+  @resolved = []
+  # regexes for finding our statements
+  @re_requires = Regexp.new('I\.require\s*\(\s*[\'\"]([^\)]+)[\'\"]\s*(?:,)*\s*(true|false)?\s*(?:,)*\s*(true|false)?\s*\)')
+  @re_provides = Regexp.new('I\.provide\s*\(\s*[\'\"]([^\)]+)[\'\"]\s*\)')
+  
+  def self.build_from_files(files)
+    # make sure there are no dupes in the files array
+    sources = Set.new(files)
+    #iterate through the array
+    sources.each {|file|
+      # make a dependant instance
+      dep = Dependant.new(file)
+      # should we push this one?
+      is_dep = false
+      # open the file and read it
+      puts "opening #{file}"
+      f = File.open(file)
+      txt = f.read
+      f.close
+      # iterate each line and look for statements
+      txt.each_line {|line|
+        if data = @re_provides.match(line)
+          is_dep = true
+          data.captures.each {|i|
+            dep.provides_push(i)
+          }
+        end
+        if mdata = @re_requires.match(line)
+          if is_dep == false: is_dep = true end
+          # seperate the required namespace from the load
+          # attributes of the script tag it writes
+          mdata.captures.each_index {|j|
+            # the first is a namespace
+            if j == 0
+              dep.requires_push(mdata.captures[0])
+              # save the load attributes for this ns
+              @req_attr[mdata.captures[0]] = {}
+            # 1 is the async flag
+            elsif j == 1
+              @req_attr[mdata.captures[0]]['async'] = mdata.captures[1]
+            # 2 is the defer flag
+            elsif j == 2
+              @req_attr[mdata.captures[0]]['defer'] = mdata.captures[2]
+            end
+          }
+        end
+      }
+      @all.push(dep) if is_dep == true
+    }
+  end
+
+  # TODO this could be combined later for extra DRY-ness
+  # this is fine for now...run this after build_from_files()
+  def self.add_third_party(files, ven_dirs)
+    # if the file is in the ven_dir, remove its .js extension and use
+    # that as the provided namespace
+    sources = Set.new(files)
+    sources.each {|file|
+      dep = Dependant.new(file)
+      # ven_dir should have been hashed already
+      if ven_dirs[File.dirname(file)]
+        prov = File.basename(file, '.js')
+        dep.provides_push(prov)
+        # NOTE without adding them manually, third_party libs
+        # cannot declare requires()
+        @all.unshift(dep)
+      end
+    }
+  end
+
+  def self.build_matched_hash
+    @all.each { |dep|
+      puts "found #{dep.filename}"
+      dep.provides.each {|ns|
+        puts "it provides #{ns}"
+        if attr_obj = @req_attr[ns]
+          # NOTE files will only get one set of load attributes
+          # they could be overwritten if required 2 different ways...
+          dep.async = attr_obj['async']
+          dep.defer = attr_obj['defer']
+          puts "and has the load attributes async = #{dep.async}, defer = #{dep.defer}"
+        end
+        # dont provide the same ns more than once
+        if @matched[ns].nil?
+          # {namespace: dependency}
+          puts "assigning #{ns} to matched hash"
+          @matched[ns] = dep
+        else
+          puts "#{@hash[ns]} already provided by #{ns}"
+        end
+      }
+    }
+  end
+  
+  def self.resolve_deps
+    @matched.each_value { |dep|
+      dep.requires.each { |req|
+        puts "Resolving required namespace #{req}"
+        if result = resolve_req(req)
+          puts result
+        else
+          puts "Missing provider for #{req}"
+          return false
+        end
+      }
+    }
+    return true
+  end
+  
+  def self.resolve_req(req)
+    #require must be a file we know about
+    if @resolved.include?(req)
+      return "#{req} already resolved"
+    elsif @matched[req]
+      @resolved.push(req)
+      return "#{req} is provided by #{@matched[req]}"
+    end
+  end
+  
+  def self.all
+    @all
+  end
+  
+  def self.matched
+    @matched
+  end
+  
+end

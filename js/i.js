@@ -15,18 +15,11 @@ var I = I || {};
  * Reference for the current context. Except of special cases it will be 'window'
  */
 I.global = this;
-
 /**
  * Path for included scripts
  * @type {string}
  */
 I.basePath = '';
-
-/**
- * A hook to override basePath
- * @type {string|undefined}
- */
-I.global.BASE_PATH;
 /**
  * Reference for the current document.
  */
@@ -85,8 +78,10 @@ I.amDefined = function(ns, fn) {
         fna = fn;
     }
     // clear out any defined tokens first
+    // using the _amLoaded memoized hash 
+    // instead of getObjectByName
     for(var n; n = nsa.shift(); ) {
-        if(this._amLoadedChk(n)) {
+        if(this.amLoaded(n)) {
             var pass;
         } else {
             tmp.push(n);
@@ -126,15 +121,16 @@ I._amWaitingChk = function(ns) {
     return ns in this._amWaiting;
 };
 /**
- * A lookup for loaded scripts by their provided namespaces
+ * A lookup for loaded scripts by their provided namespaces.
  * @private
  */
 I._amLoaded = {};
 /**
- * Check _amLoaded for a given namespace
- * @private
+ * Check for loaded dependencies by their provided namespaces.
+ * If a script has been written and parsed this method will return true.
+ * @param {String} ns. The namespace explicitly provided by a Dependency.
  */
-I._amLoadedChk = function(ns) {
+I.amLoaded = function(ns) {
     return ns in this._amLoaded;
 };
 /**
@@ -217,10 +213,6 @@ I.getObjectByName = function(name, scope) {
  * @private
  */
 I._getPath = function() {
-    if(this.global.BASE_PATH) {
-        this.basePath =  this.global.BASE_PATH;   
-        return;
-    }
     var scripts = this.doc.getElementsByTagName('script');
     for (var i = scripts.length - 1; i >= 0; --i) {
         var src = scripts[i].src;
@@ -232,12 +224,33 @@ I._getPath = function() {
     }
 };
 /**
+ * Fetch and store a script in the browser cache. See 
+ * http://www.phpied.com/preload-cssjavascript-without-execution/.
+ * @param {String} ns. The namespace that is explicitly provided by the
+ * dependency you want to cache
+ */
+I.cache = function(ns) {
+
+};
+/**
+ * Will append and parse a script that has been cached via I.cache().
+ * @param {String} ns. The namespace used in the I.cache() call.
+ */
+I.execute = function(ns) {
+
+};
+/**
+ * Lookup for dependencies which have been cached
+ */
+I._amCached = {};
+/**
  * Creates object stubs for a namespace. When present in a file, I.provide
  * also indicates that the file defines the indicated object.
  * @param {string} name name of the object that this file defines.
  */
 I.provide = function(name) {
     // Ensure that the same namespace isn't provided twice.
+    // TODO evaluate getObjectByName vs a memoized lookup
     if(I.getObjectByName(name) && !I._ns[name]) {
         throw Error('Namespace "' + name + '" already declared.');
     }
@@ -349,8 +362,8 @@ I._getDepsFromPath = function(path) {
  */
 I._ns = {};
 /**
- * Resolves dependencies based on the dependencies added using addDependency
- * and calls _cjsDownload in the correct order.
+ * Resolution based on the dependencies added using addDependency
+ * and calls _writeScriptTag accordingly.
  * @private
  */
 I._writeScripts = function() {
@@ -420,7 +433,7 @@ I._writeScriptTag = function(config) {
         this._dependencies.written[config.src] = true;
         var script = this.doc.createElement('SCRIPT');
         script.src = config.src;
-        script.setAttribute('path', config.path);
+		script.setAttribute('path', config.path);
         if(config.async) {script.async = true;}
         if(config.defer) {script.defer = true;}
         // call _waitListener when loaded
