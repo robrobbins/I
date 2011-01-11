@@ -123,6 +123,22 @@ require them by their script name minus the extension:
 Note that we are not using the actual namespace provided by the file (that would 
 have been 'jQuery' or '$') as we do with our own files.
 
+####Jquery Plugin Caveat
+
+You should wrap the anonymous function that jQuery plugins execute in like so:
+
+	I.amDefined('jquery', function() {
+		//plugin source here
+	});
+
+This way your jQuery plugins won't try to locate jQuery itself before it is done parsing. 
+Considering the size difference of jQuery itself verses most plugins this is a very likely 
+scenario.
+
+The next version of i.js (ETA this weekend) adds prefetch/caching of scripts a la' 
+Stoyan's [preload](http://www.phpied.com/preload-then-execute/). Which works well for
+this and doesn't require wrapping the source code.
+
 This is definitely the Alpha release of Depwriter as it is in a very raw state, but
 you can use it now if you follow a couple of simple set-up steps (see the source).
     
@@ -148,6 +164,6 @@ I'll do some this week.
 ###Forthcoming Changes
 
 I'll probably move the 4 configuration steps into a .yaml file and load them from
-there Once. 
+there. 
 	
 	
