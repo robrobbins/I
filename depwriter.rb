@@ -1,20 +1,18 @@
 i_am = File.expand_path($PROGRAM_NAME)
 i_root = File.dirname(i_am)
 # TODO Move this section to a config file
-# location of ruby files
-rb_dir = i_root + '/depruby'
-# dirname, relative to i_root, where i.js is
-i_dir = 'js'
+# location of ruby files relative to depwriter
+rb_dir = '/depruby'
+# dirname, relative to root, where i.js is
+i_dir = 'public/js'
 # the ext types (minus the dot) which may contain requires / provides
-search_ext = ['js', 'html']
-# directory name, or array of names (relative to i_root), that hold 
+search_ext = ['js', 'erb']
+# directory name, or array of names (relative to root), that hold 
 # third party scripts you want added as dependencies
-ven_dirs = ['js/vendor']
+ven_dirs = ['public/js/vendor']
 
-$LOAD_PATH.unshift(rb_dir)
-
-require 'Utils'
-require 'Dependencies'
+require ".#{rb_dir}/utils.rb"
+require ".#{rb_dir}/dependencies.rb"
 
 Utils.expandDirectories(search_ext)
 # rip through the files looking for provides() / requires()
@@ -39,7 +37,7 @@ if Dependencies.resolve_deps
       len = rm.size
       st = dep.filename.index(rm)
       fn = dep.filename.slice(st + len, dep.filename.size)
-      deps.puts "I.addDependency('#{fn}', #{dep.get_provides}, #{dep.get_requires}, #{dep.get_load_attrs})"
+      deps.puts "I.addDependency('#{fn}', #{dep.get_provides}, #{dep.get_requires}, #{dep.get_load_attrs});"
     }
   end
   puts "deps.js written, moving back to #{i_root}"
