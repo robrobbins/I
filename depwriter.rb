@@ -2,17 +2,17 @@ i_am = File.expand_path($PROGRAM_NAME)
 i_root = File.dirname(i_am)
 # TODO Move this section to a config file
 # location of ruby files relative to depwriter
-rb_dir = '/depruby'
+rb_dir = 'depruby'
 # dirname, relative to root, where i.js is
-i_dir = 'public/js'
+i_dir = 'js'
 # the ext types (minus the dot) which may contain requires / provides
-search_ext = ['js', 'erb']
+search_ext = ['js', 'html']
 # directory name, or array of names (relative to root), that hold 
 # third party scripts you want added as dependencies
-ven_dirs = ['public/js/vendor']
+ven_dirs = ['js/vendor']
 
-require ".#{rb_dir}/utils.rb"
-require ".#{rb_dir}/dependencies.rb"
+require "./#{rb_dir}/utils.rb"
+require "./#{rb_dir}/dependencies.rb"
 
 Utils.expandDirectories(search_ext)
 # rip through the files looking for provides() / requires()
