@@ -432,10 +432,10 @@ I._writeScriptTag = function(config) {
     if(!this._dependencies.written[config.src]) {
         this._dependencies.written[config.src] = true;
         var script = this.doc.createElement('SCRIPT');
-        script.src = config.src;
+		script.setAttribute('src', config.src);
 		script.setAttribute('path', config.path);
-        if(config.async) {script.async = true;}
-        if(config.defer) {script.defer = true;}
+        if(config.async) {script.setAttribute('async', 'async');}
+        if(config.defer) {script.setAttribute('defer', 'defer');}
         // call _waitListener when loaded
         script.onload = I._waitListener;
         // IE
