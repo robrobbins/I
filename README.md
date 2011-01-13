@@ -37,7 +37,7 @@ If a script/module relies on the result of another you can place your code
 inside of this method. Think of it as *document.ready* for dependencies. For
 example, look at the test.js page in this project.
 
-    I.amDefined('jQuery', function(){
+    I.amDefined('jquery', function(){
         $('#footer').find('li').addClass('green');
         $('#btnTest').click(function(){TEST.deGreen();});
     });
