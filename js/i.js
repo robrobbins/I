@@ -12,19 +12,6 @@
  */
 var I = I || {};
 /**
- * Reference for the current context. Except of special cases it will be 'window'
- */
-I.global = this;
-/**
- * Path for included scripts
- * @type {string}
- */
-I.basePath = '';
-/**
- * Reference for the current document.
- */
-I.doc = document;
-/**
  * Adds a dependency from a file to the files it requires. Reads the async or
  * defer attributes if present in I.require() and sets them in the
  * corresponding dependency list lookup hash 
@@ -56,6 +43,19 @@ I.addDependency = function(relPath, provides, requires, async, defer) {
     }
     if(async) {this._async[path] = true;}
     if(defer) {this._defer[path] = true;}
+};
+/**
+ * Lookup for I.Cache method
+ * @private
+ */
+I._amCached = {};
+/**
+ * Method to check _amCached object for ns
+ * @param ns The namespace to check for
+ * @return {Boolean}
+ */
+I._amCachedChk = function(ns) {
+	return ns in this._amCached;
 };
 /**
  * If a specified namespace is not defined yet this method
@@ -109,17 +109,9 @@ I.amDefined = function(ns, fn) {
     }
 };
 /**
- * The queue for waiting namespaces and their callbacks
- * @private
+ * Quick IE check for I.cache
  */
-I._amWaiting = {};
-/**
- * Check _amWaiting for a given namespace
- * @private
- */
-I._amWaitingChk = function(ns) {
-    return ns in this._amWaiting;
-};
+I.amIE = navigator.appName.indexOf('Microsoft') === 0;
 /**
  * A lookup for loaded scripts by their provided namespaces.
  * @private
@@ -134,28 +126,62 @@ I.amLoaded = function(ns) {
     return ns in this._amLoaded;
 };
 /**
- * Allow newly loaded scripts to check for callbacks.
- * Remember, <this> is the script element...
+ * The queue for waiting namespaces and their callbacks
  * @private
  */
-I._waitListener = function() {
-    // use the path to get an object
-    var obj = I._getDepsFromPath(this.getAttribute('path'));
-    // the obj has 'provide' tokens as keys
-    for(var k in obj) {
-        // done in-loop to handle multiple provides per file
-        I._amLoaded[k] = true;
-    }
-    // push the wait list through amDefined
-    var cp = I._amWaiting;
-    // inf loop === bad
-    I._amWaiting = {};
-    for(var p in cp) {
-        if(cp.hasOwnProperty(p)) {
-            I.amDefined(p, cp[p]);
-        }
-    }
+I._amWaiting = {};
+/**
+ * Check _amWaiting for a given namespace
+ * @private
+ */
+I._amWaitingChk = function(ns) {
+    return ns in this._amWaiting;
 };
+/**
+ * Lookup for which tags should be written with the async attribute.
+ * Note that if you require the same file multiple times with this pref set
+ * they will overwrite.
+ * @private
+ */
+I._async = {};
+/**
+ * Fetch and store a script in the browser cache. See 
+ * http://www.phpied.com/preload-cssjavascript-without-execution/.
+ * @param {String} ns. The namespace that is explicitly provided by the
+ * dependency you want to cache
+ */
+I.cache = function(ns) {
+	// already cached?
+	if(I._amCachedChk(ns)) {return;}
+	// get the actual dep
+	//TODO here
+};
+/**
+ * Lookup for which tags should be written with the defer attribute.
+ * Note that if you require the same file multiple times with this pref set
+ * they will overwrite.
+ * @private
+ */
+I._defer = {};
+/**
+ * This object is used to keep track of dependencies and other data that is
+ * used for loading scripts
+ * @private
+ * @type {Object}
+ */
+I._dependencies = {
+	pathToNames: {}, // 1 to many
+	nameToPath: {}, // 1 to 1
+	requires: {}, // 1 to many
+	// used when resolving dependencies to prevent us from
+	// visiting the file twice
+	visited: {},
+	written: {} // used to keep track of script files we have written
+};
+/**
+ * Reference for the current document.
+ */
+I.doc = document;
 /**
  * Builds an object structure for the provided namespace path,
  * ensuring that names that already exist are not overwritten. For
@@ -191,6 +217,17 @@ I._exportPath = function(name, obj, scope) {
   }
 };
 /**
+ * Get the namespace(s) provided by a file
+ * @private
+ */
+I._getDepsFromPath = function(path) {
+    if (path in this._dependencies.pathToNames) {
+        return this._dependencies.pathToNames[path];
+    } else {
+        return null;
+    }
+};
+/**
  * Returns an object based on its fully qualified external name.
  * @param {string} name The fully qualified name.
  * @param {Object=} scope The object within which to look. Default is I.global.
@@ -209,126 +246,6 @@ I.getObjectByName = function(name, scope) {
   return cur;
 };
 /**
- * Find the path to i.js
- * @private
- */
-I._getPath = function() {
-    var scripts = this.doc.getElementsByTagName('script');
-    for (var i = scripts.length - 1; i >= 0; --i) {
-        var src = scripts[i].src;
-        var l = src.length;
-        if(src.substr(l - 4) === 'i.js') {
-            I.basePath = src.substr(0, l - 4);
-            return;
-        }
-    }
-};
-/**
- * Fetch and store a script in the browser cache. See 
- * http://www.phpied.com/preload-cssjavascript-without-execution/.
- * @param {String} ns. The namespace that is explicitly provided by the
- * dependency you want to cache
- */
-I.cache = function(ns) {
-
-};
-/**
- * Will append and parse a script that has been cached via I.cache().
- * @param {String} ns. The namespace used in the I.cache() call.
- */
-I.execute = function(ns) {
-
-};
-/**
- * Lookup for dependencies which have been cached
- */
-I._amCached = {};
-/**
- * Creates object stubs for a namespace. When present in a file, I.provide
- * also indicates that the file defines the indicated object.
- * @param {string} name name of the object that this file defines.
- */
-I.provide = function(name) {
-    // Ensure that the same namespace isn't provided twice.
-    // TODO evaluate getObjectByName vs a memoized lookup
-    if(I.getObjectByName(name) && !I._ns[name]) {
-        throw Error('Namespace "' + name + '" already declared.');
-    }
-    var namespace = name;
-    while ((namespace = namespace.substring(0, 
-        namespace.lastIndexOf('.')))) {
-            this._ns[namespace] = true;
-    }
-    this._exportPath(name);
-};
-/**
- * Implements a system for the dynamic resolution of dependencies
- * @param {string} module Module to include, should match a 'provide'
- * in deps.js
- * @param {Boolean} async Should the async attribute be set on this script 
- * tag when written
- * @param{Boolean} defer Should the defer attribute be written
- */
-I.require = function(module, async, defer) {
-    // if the object already exists we do not need do do anything
-    if (I.getObjectByName(module)) {
-        return;
-    }
-    var _path = this._getPathFromDeps(module);
-    if (_path) {
-        this._included[_path] = true;
-        if(async) {
-            this._async[_path] = true; 
-        }
-        if(defer) {
-            this._defer[_path] = true;
-        }
-        this._writeScripts();
-    } else {
-        var errorMessage = 'I.require could not find: ' + module;
-        if (this.global.console) {
-            this.global.console['error'](errorMessage);
-        }
-        throw Error(errorMessage); 
-    }
-};
-/**
- * Object used to keep track of urls that have already been added. This
- * record allows the prevention of circular dependencies.
- * @type {Object}
- * @private
- */
-I._included = {};
-/**
- * Lookup for which tags should be written with the async attribute.
- * Note that if you require the same file multiple times with this pref set
- * they will overwrite.
- * @private
- */
-I._async = {};
-/**
- * Lookup for which tags should be written with the defer attribute.
- * Note that if you require the same file multiple times with this pref set
- * they will overwrite.
- * @private
- */
-I._defer = {};
-/**
- * This object is used to keep track of dependencies and other data that is
- * used for loading scripts
- * @private
- * @type {Object}
- */
-I._dependencies = {
-pathToNames: {}, // 1 to many
-nameToPath: {}, // 1 to 1
-requires: {}, // 1 to many
-// used when resolving dependencies to prevent us from
-// visiting the file twice
-visited: {},
-written: {} // used to keep track of script files we have written
-};
-/**
  * Looks at the dependency paths and tries to determine the script file that
  * fulfills a particular path.
  * @param {string} path In the form I.namespace.Class or project.script
@@ -343,15 +260,21 @@ I._getPathFromDeps = function(path) {
     }
 };
 /**
- * Get the namespace(s) provided by a file
+ * Reference for the current context. Except of special cases it will be 'window'
+ */
+I.global = this;
+/**
+ * Object used to keep track of urls that have already been added. This
+ * record allows the prevention of circular dependencies.
+ * @type {Object}
  * @private
  */
-I._getDepsFromPath = function(path) {
-    if (path in this._dependencies.pathToNames) {
-        return this._dependencies.pathToNames[path];
-    } else {
-        return null;
-    }
+I._included = {};
+/**
+ * Will append and parse a script that has been cached via I.cache().
+ * @param {String} ns. The namespace used in the I.cache() call.
+ */
+I.need= function(ns) {
 };
 /**
  * Namespaces implicitly defined by provide. For example,
@@ -361,6 +284,77 @@ I._getDepsFromPath = function(path) {
  * @private
  */
 I._ns = {};
+/**
+ * Creates object stubs for a namespace. When present in a file, I.provide
+ * also indicates that the file defines the indicated object.
+ * @param {string} name name of the object that this file defines.
+ */
+I.provide = function(name) {
+    // Ensure that the same namespace isn't provided twice.
+    if(I.getObjectByName(name) && !I._ns[name]) {
+        throw Error('Namespace "' + name + '" already declared.');
+    }
+    var namespace = name;
+    while ((namespace = namespace.substring(0, 
+        namespace.lastIndexOf('.')))) {
+            this._ns[namespace] = true;
+    }
+    this._exportPath(name);
+};
+/**
+ * Implements a system for the dynamic resolution of dependencies
+ * @param {string} ns Module to include, should match a 'provide'
+ * in deps.js 
+ * @param {Boolean} async Should the async attribute be set on this script 
+ * tag when written
+ * @param{Boolean} defer Should the defer attribute be written
+ */
+I.require = function(ns, async, defer) {
+    // if the declared provide has been loaded, we are done
+    if (I.amLoaded(ns)) {
+        return;
+    }
+    var _path = this._getPathFromDeps(ns);
+    if (_path) {
+        this._included[_path] = true;
+        if(async) {
+            this._async[_path] = true; 
+        }
+        if(defer) {
+            this._defer[_path] = true;
+        }
+        this._writeScripts();
+    } else {
+        var errorMessage = 'I.require could not find: ' + ns;
+        if (this.global.console) {
+            this.global.console['error'](errorMessage);
+        }
+        throw Error(errorMessage); 
+    }
+};
+/**
+ * Allow newly loaded scripts to check for callbacks.
+ * Remember, <this> is the script element...
+ * @private
+ */
+I._waitListener = function() {
+    // use the path to get an object
+    var obj = I._getDepsFromPath(this.getAttribute('src'));
+    // the obj has 'provide' tokens as keys
+    for(var k in obj) {
+        // done in-loop to handle multiple provides per file
+        I._amLoaded[k] = true;
+    }
+    // push the wait list through amDefined
+    var cp = I._amWaiting;
+    // inf loop === bad
+    I._amWaiting = {};
+    for(var p in cp) {
+        if(cp.hasOwnProperty(p)) {
+            I.amDefined(p, cp[p]);
+        }
+    }
+};
 /**
  * Resolution based on the dependencies added using addDependency
  * and calls _writeScriptTag accordingly.
@@ -411,8 +405,7 @@ I._writeScripts = function() {
     for(var i = 0; i < scripts.length; i++) {
         if(scripts[i]) {
             this._writeScriptTag({
-                src: this.basePath + scripts[i],
-                path: scripts[i],
+                src: scripts[i],
                 async: this._async[scripts[i]] || false,
                 defer: this._defer[scripts[i]] || false
             });
@@ -433,7 +426,6 @@ I._writeScriptTag = function(config) {
         this._dependencies.written[config.src] = true;
         var script = this.doc.createElement('SCRIPT');
 		script.setAttribute('src', config.src);
-		script.setAttribute('path', config.path);
         if(config.async) {script.setAttribute('async', 'async');}
         if(config.defer) {script.setAttribute('defer', 'defer');}
         // call _waitListener when loaded
@@ -447,5 +439,3 @@ I._writeScriptTag = function(config) {
         this.doc.getElementsByTagName('HEAD')[0].appendChild(script);
     }
 };
-// set the base path...
-I._getPath();

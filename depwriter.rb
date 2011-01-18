@@ -2,17 +2,20 @@ i_am = File.expand_path($PROGRAM_NAME)
 i_root = File.dirname(i_am)
 # TODO Move this section to a config file
 # location of ruby files relative to depwriter
-rb_dir = 'depruby'
+rb_dir = '/depruby'
 # dirname, relative to root, where i.js is
 i_dir = 'js'
+# a portion of the filename that should be removed when served (this is used
+# as the src="..." attribute of the script tags)
+rm_dir = ''
 # the ext types (minus the dot) which may contain requires / provides
 search_ext = ['js', 'html']
 # directory name, or array of names (relative to root), that hold 
 # third party scripts you want added as dependencies
 ven_dirs = ['js/vendor']
 
-require "./#{rb_dir}/utils.rb"
-require "./#{rb_dir}/dependencies.rb"
+require ".#{rb_dir}/utils.rb"
+require ".#{rb_dir}/dependencies.rb"
 
 Utils.expandDirectories(search_ext)
 # rip through the files looking for provides() / requires()
@@ -32,11 +35,14 @@ if Dependencies.resolve_deps
   # open a file for writing
   out = File.open('deps.js', 'w') do |deps|
     matched.each_value {|dep|
-      # remove the filename up to i_dir as i.js finds the rel path at runtime
-      rm = i_dir + '/'
-      len = rm.size
-      st = dep.filename.index(rm)
-      fn = dep.filename.slice(st + len, dep.filename.size)
+      len = rm_dir.size
+      if len > 0
+        st = dep.filename.index(rm_dir)
+        fn = dep.filename.slice(st + len, dep.filename.size)
+      else
+        # no section to remove
+        fn = dep.filename
+      end
       deps.puts "I.addDependency('#{fn}', #{dep.get_provides}, #{dep.get_requires}, #{dep.get_load_attrs});"
     }
   end
