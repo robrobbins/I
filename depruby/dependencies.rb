@@ -8,6 +8,8 @@ class Dependant
     @filename = filename
     @provides = []
     @requires = []
+    @async = nil
+    @defer = nil
   end
   
   def filename; @filename; end
