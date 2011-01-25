@@ -151,10 +151,27 @@ I._async = {};
  * dependency you want to cache
  */
 I.cache = function(ns) {
+	// allow for an array of strings
+	if(typeof ns !== 'string') {
+		//assume an array
+		for(var n; n = ns.shift(); ) {
+			I.cache(n);
+		}
+		return;
+	}
 	// already cached?
 	if(I._amCachedChk(ns)) {return;}
-	// get the actual dep
-	//TODO here
+	// depending on browser, preload the script as...
+	if(I.amIE) {
+		new Image().src = this._dependencies.nameToPath[ns];
+	} else {
+		o = document.createElement('object');
+		o.data = this._dependencies.nameToPath[ns];
+		o.width = 0;
+		o.height = 0;
+		document.body.appendChild(o);
+	}
+	I._amCached[ns] = true;
 };
 /**
  * Lookup for which tags should be written with the defer attribute.
@@ -397,6 +414,7 @@ I._writeScripts = function() {
             scripts.push(path);
         }
     } // end visitNode
+
     for(var path in this._included) {
         if(!deps.written[path]) {
             visitNode(path);
@@ -432,7 +450,7 @@ I._writeScriptTag = function(config) {
         script.onload = I._waitListener;
         // IE
         script.onreadystatechange = function() {
-            if(script.readyState == 'complete') {
+            if(script.readyState == 'loaded') {
                 I._waitListener.call(script);
             }
         };
