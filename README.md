@@ -21,7 +21,7 @@ Creates this global level nested object:
 
 Will append a script tag to the DOM with the async attribute set:
 
-    <script src='path-to-jquery' async></script>
+    <script src='path-to-jquery' async='async'></script>
 
 You can also have the defer attribute set:
 
@@ -29,7 +29,7 @@ You can also have the defer attribute set:
 
 Will append this tag:
 
-    <script src='path-to-file-that-provides-Foo.bar' defer></script>
+    <script src='path-to-file-that-provides-Foo.bar' defer='defer'></script>
 
 ###I.amDefined(token, function)
 
