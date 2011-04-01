@@ -8,6 +8,7 @@ class Dependant
     @filename = filename
     @provides = []
     @requires = []
+    @caches = []
     @async = nil
     @defer = nil
   end
@@ -15,6 +16,7 @@ class Dependant
   def filename; @filename; end
   def requires; @requires; end
   def provides; @provides; end
+  def caches; @caches; end
   
   def provides_push(val)
     @provides.push(val)
@@ -30,6 +32,14 @@ class Dependant
   
   def get_requires
     return get_collection(@requires)
+  end
+  
+  def caches_push(val)
+    @caches.push(val)
+  end
+  
+  def get_caches
+    return get_collection(@caches)
   end
   
   def get_collection(which)
@@ -66,8 +76,9 @@ module Dependencies
   # namespaces which have been found
   @resolved = []
   # regexes for finding our statements
-  @re_requires = Regexp.new('I\.require\s*\(\s*[\'\"]([^\)]+)[\'\"]\s*(?:,)*\s*(true|false)?\s*(?:,)*\s*(true|false)?\s*\)')
   @re_provides = Regexp.new('I\.provide\s*\(\s*[\'\"]([^\)]+)[\'\"]\s*\)')
+  @re_requires = Regexp.new('I\.require\s*\(\s*[\'\"]([^\)]+)[\'\"]\s*(?:,)*\s*(true|false)?\s*(?:,)*\s*(true|false)?\s*\)')
+  @re_caches = Regexp.new('I\.cache\s*\(\s*[\'\"]([^\)]+)[\'\"]\s*\)')
   
   def self.build_from_files(files)
     # make sure there are no dupes in the files array
@@ -90,9 +101,8 @@ module Dependencies
           data.captures.each {|i|
             dep.provides_push(i)
           }
-        end
-        if mdata = @re_requires.match(line)
-          if is_dep == false: is_dep = true end
+        elsif mdata = @re_requires.match(line)
+          is_dep = true
           # seperate the required namespace from the load
           # attributes of the script tag it writes
           mdata.captures.each_index {|j|
@@ -108,6 +118,12 @@ module Dependencies
             elsif j == 2
               @req_attr[mdata.captures[0]]['defer'] = mdata.captures[2]
             end
+          }
+        elsif ndata = @re_caches.match(line)
+          is_dep = true
+          ndata.captures.each {|k|
+            puts "pushing #{k} into cached array"
+            dep.caches_push(k)
           }
         end
       }
@@ -166,6 +182,16 @@ module Dependencies
           puts result
         else
           puts "Missing provider for #{req}"
+          return false
+        end
+      }
+      # now resolve the caches
+      dep.caches.each { |c|
+        puts "Resolving cached namespace #{c}"
+        if result = resolve_req(c)
+          puts result
+        else
+          puts "Missing provider for #{c}"
           return false
         end
       }

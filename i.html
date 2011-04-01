@@ -3,17 +3,8 @@
 <html>
 	<head>
   	<title>I Dev.com</title>
-		<style>
-    	.green {
-				background-color:#98de31;
-			}
-			.slate {
-				background-color:#424242;
-			}
-			.ninja {
-				display:none;
-			}
-		</style>
+		<link rel="stylesheet" href="css/base.css" type="text/css" media="screen" 
+			title="base" charset="utf-8">
 		<script src="js/i.js"></script>
 		<script src="js/deps.js"></script>
 		<script>
@@ -23,34 +14,23 @@
 	<body>
 	  <div id="container">
 	  	<div id="header">
-	    	<h1>I Am The Header</h1>
-	      <span class="text">...and I am some other text</span>
+	    	<h1>I Test</h1>
 	    </div>
       <br style="clear: both;">
-      <div id="nav">
-      	<ul>
-        	<li><a href="#">I am an href in a li</a></li>
-          <li><a href="#">Me too!</a></li>
-      	</ul>
-      </div>
-      <br style="clear: both;">
       <div id="page_title">
-      	<h2>I am a page title, look at me</h2>
+      	<h3>What, When...</h3>
       </div>
       <br style="clear: both;">
-      <div id="content">
-			<input name="btnTest" value="Green Out" id="btnTest" type="button">
-			<i>de-green the footer</i>
+      <div id="loaded_output">
+					<textarea name="loaded-output" id="ta_output" rows="10" cols="100">
+					</textarea>
       </div>
       <br style="clear: both;">
       <div id="footer">
-	    	<ul>
-        	<li><a href="#">does</a></li>
-          <li><a href="#">anyone</a></li>
-          <li><a href="#">read</a></li>
-          <li><a href="#">the</a></li>
-          <li><a href="#">footer?</a></li>
-   			</ul>
+				<label for="cached">Now parse the cached scripts: </label>
+				<input type="button" name="cached" value="Now" id="btn_cached">
+				<br />
+				<span id="hovered">What's this for?</span>
 	    </div>
 	  </div>
 	</body>

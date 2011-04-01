@@ -25,24 +25,24 @@ var I = I || {};
  * @link I.require
  */
 I.addDependency = function(relPath, provides, requires, async, defer) {
-    var provide, require;
-    var path = relPath.replace(/\\/g, '/');
-    var deps = this._dependencies;
-    for (var i = 0; provide = provides[i]; i++) {
-        deps.nameToPath[provide] = path;
-        if (!(path in deps.pathToNames)) {
-            deps.pathToNames[path] = {};
-        }
-        deps.pathToNames[path][provide] = true;
-    }
-    for (var j = 0; require = requires[j]; j++) {
-        if (!(path in deps.requires)) {
-            deps.requires[path] = {};
-        }
-        deps.requires[path][require] = true;
-    }
-    if(async) {this._async[path] = true;}
-    if(defer) {this._defer[path] = true;}
+	var provide, require;
+	var path = relPath.replace(/\\/g, '/');
+	var deps = this._dependencies;
+	for (var i = 0; provide = provides[i]; i++) {
+		deps.nameToPath[provide] = path;
+		if (!(path in deps.pathToNames)) {
+			deps.pathToNames[path] = {};
+		}
+		deps.pathToNames[path][provide] = true;
+	}
+	for (var j = 0; require = requires[j]; j++) {
+		if (!(path in deps.requires)) {
+			deps.requires[path] = {};
+		}
+		deps.requires[path][require] = true;
+	}
+	if(async) {this._async[path] = true;}
+	if(defer) {this._defer[path] = true;}
 };
 /**
  * Lookup for I.Cache method
@@ -65,48 +65,48 @@ I._amCachedChk = function(ns) {
  * @param fn The function to call when ns = true
  */
 I.amDefined = function(ns, fn) {
-    var nsa, nss, fna, tmp=[];
-    // Normalize the inputs
-    if(typeof ns === 'string') {
-        nsa = ns.split('>');
-    } else {
-        nsa = ns;
-    }
-    if(typeof fn === 'function') {
-        fna = [fn];
-    } else {
-        fna = fn;
-    }
-    // clear out any defined tokens first
-    // using the _amLoaded memoized hash 
-    // instead of getObjectByName
-    for(var n; n = nsa.shift(); ) {
-        if(this.amLoaded(n)) {
-            var pass;
-        } else {
-            tmp.push(n);
-        }
-    }
-    // all are defined, we're done here
-    if(!tmp.length) {
-        for(var f; f = fna.shift(); ) {
-            f.call(this.global);    
-        }
-    } else {
-        // one left, assign to nss as is
-        if(tmp.length === 1) {nss = tmp[0];}
-        // multiple left, make a composite key and assign it to nss
-        else {nss = tmp.join('>');}
-        // key = nss, val = [fn,...]
-        // val needs to be an array for multiple callbacks
-        // waiting on the same ns or combination of them
-        if (!this._amWaitingChk(nss)) {
-            this._amWaiting[nss] = [];
-        }
-        for(var cb; cb = fna.shift(); ) {
-            this._amWaiting[nss].push(cb); 
-        }
-    }
+	var nsa, nss, fna, tmp=[];
+	// Normalize the inputs
+	if(typeof ns === 'string') {
+		nsa = ns.split('>');
+	} else {
+		nsa = ns;
+	}
+	if(typeof fn === 'function') {
+		fna = [fn];
+	} else {
+		fna = fn;
+	}
+	// clear out any defined tokens first
+	// using the _amLoaded memoized hash 
+	// instead of getObjectByName
+	for(var n; n = nsa.shift(); ) {
+		if(this.amLoaded(n)) {
+			var pass;
+		} else {
+			tmp.push(n);
+		}
+	}
+	// all are defined, we're done here
+	if(!tmp.length) {
+		for(var f; f = fna.shift(); ) {
+			f.call(this.global);
+		}
+	} else {
+		// one left, assign to nss as is
+		if(tmp.length === 1) {nss = tmp[0];}
+		// multiple left, make a composite key and assign it to nss
+		else {nss = tmp.join('>');}
+		// key = nss, val = [fn,...]
+		// val needs to be an array for multiple callbacks
+		// waiting on the same ns or combination of them
+		if (!this._amWaitingChk(nss)) {
+			this._amWaiting[nss] = [];
+		}
+		for(var cb; cb = fna.shift(); ) {
+			this._amWaiting[nss].push(cb); 
+		}
+	}
 };
 /**
  * Quick IE check for I.cache
@@ -123,7 +123,7 @@ I._amLoaded = {};
  * @param {String} ns. The namespace explicitly provided by a Dependency.
  */
 I.amLoaded = function(ns) {
-    return ns in this._amLoaded;
+	return ns in this._amLoaded;
 };
 /**
  * The queue for waiting namespaces and their callbacks
@@ -135,7 +135,7 @@ I._amWaiting = {};
  * @private
  */
 I._amWaitingChk = function(ns) {
-    return ns in this._amWaiting;
+	return ns in this._amWaiting;
 };
 /**
  * Lookup for which tags should be written with the async attribute.
@@ -147,7 +147,7 @@ I._async = {};
 /**
  * Fetch and store a script in the browser cache. See 
  * http://www.phpied.com/preload-cssjavascript-without-execution/.
- * @param {String} ns. The namespace that is explicitly provided by the
+ * @param {String|Array} ns. The namespace that is explicitly provided by the
  * dependency you want to cache
  */
 I.cache = function(ns) {
@@ -217,20 +217,20 @@ I._exportPath = function(name, obj, scope) {
 
   // fix for Internet Explorer's strange behavior
   if (!(parts[0] in cur) && cur.execScript) {
-    cur.execScript('var ' + parts[0]);
+	cur.execScript('var ' + parts[0]);
   }
   // TODO re-evaluate this (no comp step)
   // ...use a for-loop and reserve the init logic as below.
   // Parentheses added to eliminate strict JS warning in Firefox.
   for (var part; parts.length && (part = parts.shift());) {
-    if (!parts.length && obj) {
-      // last part and we have an object; use it
-      cur[part] = obj;
-    } else if (cur[part]) {
-      cur = cur[part];
-    } else {
-      cur = cur[part] = {};
-    }
+	if (!parts.length && obj) {
+	  // last part and we have an object; use it
+	  cur[part] = obj;
+	} else if (cur[part]) {
+	  cur = cur[part];
+	} else {
+	  cur = cur[part] = {};
+	}
   }
 };
 /**
@@ -238,11 +238,11 @@ I._exportPath = function(name, obj, scope) {
  * @private
  */
 I._getDepsFromPath = function(path) {
-    if (path in this._dependencies.pathToNames) {
-        return this._dependencies.pathToNames[path];
-    } else {
-        return null;
-    }
+	if (path in this._dependencies.pathToNames) {
+		return this._dependencies.pathToNames[path];
+	} else {
+		return null;
+	}
 };
 /**
  * Returns an object based on its fully qualified external name.
@@ -254,11 +254,11 @@ I.getObjectByName = function(name, scope) {
   var parts = name.split('.');
   var cur = scope || this.global;
   for (var part; part = parts.shift(); ) {
-    if (cur[part]) {
-      cur = cur[part];
-    } else {
-      return null;
-    }
+	if (cur[part]) {
+	  cur = cur[part];
+	} else {
+	  return null;
+	}
   }
   return cur;
 };
@@ -270,11 +270,11 @@ I.getObjectByName = function(name, scope) {
  * @private
  */
 I._getPathFromDeps = function(path) {
-    if (path in this._dependencies.nameToPath) {
-        return this._dependencies.nameToPath[path];
-    } else {
-        return null;
-    }
+	if (path in this._dependencies.nameToPath) {
+		return this._dependencies.nameToPath[path];
+	} else {
+		return null;
+	}
 };
 /**
  * Reference for the current context. Except of special cases it will be 'window'
@@ -288,12 +288,6 @@ I.global = this;
  */
 I._included = {};
 /**
- * Will append and parse a script that has been cached via I.cache().
- * @param {String} ns. The namespace used in the I.cache() call.
- */
-I.need= function(ns) {
-};
-/**
  * Namespaces implicitly defined by provide. For example,
  * provide('I.foo.bar') implicitly declares
  * that 'I' and 'I.foo' must be namespaces.
@@ -302,21 +296,39 @@ I.need= function(ns) {
  */
 I._ns = {};
 /**
+ * Start the require(), amDefined() flow for cached scripts.
+ * @type {String|Array}
+ * @private
+ */
+I.parse = function(ns, fn) {
+	// allow for an array of strings
+	if(typeof ns !== 'string') {
+		//assume an array
+		for(var i = 0; i < ns.length; i++) {
+			this.require(ns[i]); // load_attr moot here?
+		}
+	} else {
+		this.require(ns);
+	}
+	// should always be a callback 
+	this.amDefined(arguments[0], arguments[1]);
+};
+/**
  * Creates object stubs for a namespace. When present in a file, I.provide
  * also indicates that the file defines the indicated object.
  * @param {string} name name of the object that this file defines.
  */
 I.provide = function(name) {
-    // Ensure that the same namespace isn't provided twice.
-    if(I.getObjectByName(name) && !I._ns[name]) {
-        throw Error('Namespace "' + name + '" already declared.');
-    }
-    var namespace = name;
-    while ((namespace = namespace.substring(0, 
-        namespace.lastIndexOf('.')))) {
-            this._ns[namespace] = true;
-    }
-    this._exportPath(name);
+	// Ensure that the same namespace isn't provided twice.
+	if(I.getObjectByName(name) && !I._ns[name]) {
+		throw Error('Namespace "' + name + '" already declared.');
+	}
+	var namespace = name;
+	while ((namespace = namespace.substring(0, 
+		namespace.lastIndexOf('.')))) {
+			this._ns[namespace] = true;
+	}
+	this._exportPath(name);
 };
 /**
  * Implements a system for the dynamic resolution of dependencies
@@ -327,27 +339,27 @@ I.provide = function(name) {
  * @param{Boolean} defer Should the defer attribute be written
  */
 I.require = function(ns, async, defer) {
-    // if the declared provide has been loaded, we are done
-    if (I.amLoaded(ns)) {
-        return;
-    }
-    var _path = this._getPathFromDeps(ns);
-    if (_path) {
-        this._included[_path] = true;
-        if(async) {
-            this._async[_path] = true; 
-        }
-        if(defer) {
-            this._defer[_path] = true;
-        }
-        this._writeScripts();
-    } else {
-        var errorMessage = 'I.require could not find: ' + ns;
-        if (this.global.console) {
-            this.global.console['error'](errorMessage);
-        }
-        throw Error(errorMessage); 
-    }
+	// if the declared provide has been loaded, we are done
+	if (I.amLoaded(ns)) {
+		return;
+	}
+	var _path = this._getPathFromDeps(ns);
+	if (_path) {
+		this._included[_path] = true;
+		if(async) {
+			this._async[_path] = true; 
+		}
+		if(defer) {
+			this._defer[_path] = true;
+		}
+		this._writeScripts();
+	} else {
+		var errorMessage = 'I.require could not find: ' + ns;
+		if (this.global.console) {
+			this.global.console['error'](errorMessage);
+		}
+		throw Error(errorMessage); 
+	}
 };
 /**
  * Allow newly loaded scripts to check for callbacks.
@@ -355,22 +367,22 @@ I.require = function(ns, async, defer) {
  * @private
  */
 I._waitListener = function() {
-    // use the path to get an object
-    var obj = I._getDepsFromPath(this.getAttribute('src'));
-    // the obj has 'provide' tokens as keys
-    for(var k in obj) {
-        // done in-loop to handle multiple provides per file
-        I._amLoaded[k] = true;
-    }
-    // push the wait list through amDefined
-    var cp = I._amWaiting;
-    // inf loop === bad
-    I._amWaiting = {};
-    for(var p in cp) {
-        if(cp.hasOwnProperty(p)) {
-            I.amDefined(p, cp[p]);
-        }
-    }
+	// use the path to get an object
+	var obj = I._getDepsFromPath(this.getAttribute('src'));
+	// the obj has 'provide' tokens as keys
+	for(var k in obj) {
+		// done in-loop to handle multiple provides per file
+		I._amLoaded[k] = true;
+	}
+	// push the wait list through amDefined
+	var cp = I._amWaiting;
+	// inf loop === bad
+	I._amWaiting = {};
+	for(var p in cp) {
+		if(cp.hasOwnProperty(p)) {
+			I.amDefined(p, cp[p]);
+		}
+	}
 };
 /**
  * Resolution based on the dependencies added using addDependency
@@ -378,82 +390,82 @@ I._waitListener = function() {
  * @private
  */
 I._writeScripts = function() {
-    // the scripts we need to write this time
-    var scripts = [];
-    var seenScript = {};
-    var deps = this._dependencies;
+	// the scripts we need to write this time
+	var scripts = [];
+	var seenScript = {};
+	var deps = this._dependencies;
 
-    /** @private */ function visitNode(path) {
-        if(path in deps.written) {
-            return;
-        }
-        // we have already visited this one. We can get here if we have 
-        // cyclic dependencies
-        if(path in deps.visited) {
-            if (!(path in seenScript)) {
-                seenScript[path] = true;
-                scripts.push(path);
-            }
-            return;
-        }
-        deps.visited[path] = true;
-        if(path in deps.requires) {
-            for (var requireName in deps.requires[path]) {
-                if(requireName in deps.nameToPath) {
-                    visitNode(deps.nameToPath[requireName]);
-                } else if(!I.getObjectByName(requireName)) {
-                    // If the required name is defined, we assume that this
-                    // dependency was bootstapped by other means. Otherwise,
-                    // throw an exception.
-                    throw Error('Undefined nameToPath for ' + requireName);
-                }
-            }
-        }
-        if(!(path in seenScript)) {
-            seenScript[path] = true;
-            scripts.push(path);
-        }
-    } // end visitNode
+	/** @private */ function visitNode(path) {
+		if(path in deps.written) {
+			return;
+		}
+		// we have already visited this one. We can get here if we have 
+		// cyclic dependencies
+		if(path in deps.visited) {
+			if (!(path in seenScript)) {
+				seenScript[path] = true;
+				scripts.push(path);
+			}
+			return;
+		}
+		deps.visited[path] = true;
+		if(path in deps.requires) {
+			for (var requireName in deps.requires[path]) {
+				if(requireName in deps.nameToPath) {
+					visitNode(deps.nameToPath[requireName]);
+				} else if(!I.getObjectByName(requireName)) {
+					// If the required name is defined, we assume that this
+					// dependency was bootstapped by other means. Otherwise,
+					// throw an exception.
+					throw Error('Undefined nameToPath for ' + requireName);
+				}
+			}
+		}
+		if(!(path in seenScript)) {
+			seenScript[path] = true;
+			scripts.push(path);
+		}
+	} // end visitNode
 
-    for(var path in this._included) {
-        if(!deps.written[path]) {
-            visitNode(path);
-        }
-    }
-    for(var i = 0; i < scripts.length; i++) {
-        if(scripts[i]) {
-            this._writeScriptTag({
-                src: scripts[i],
-                async: this._async[scripts[i]] || false,
-                defer: this._defer[scripts[i]] || false
-            });
-            
-        } else {
-            throw Error('Undefined script input');
-        }
-    }
+	for(var path in this._included) {
+		if(!deps.written[path]) {
+			visitNode(path);
+		}
+	}
+	for(var i = 0; i < scripts.length; i++) {
+		if(scripts[i]) {
+			this._writeScriptTag({
+				src: scripts[i],
+				async: this._async[scripts[i]] || false,
+				defer: this._defer[scripts[i]] || false
+			});
+			
+		} else {
+			throw Error('Undefined script input');
+		}
+	}
 };
 /**
  * Writes a script tag (with async or defer attributes) if 
- * that script hasn't already been added to the document.   
+ * that script hasn't already been added to the document.	
  * @param {Object} config Hash of attributes
  * @private
  */
 I._writeScriptTag = function(config) {
-    if(!this._dependencies.written[config.src]) {
-        this._dependencies.written[config.src] = true;
-        var script = this.doc.createElement('SCRIPT');
+	if(!this._dependencies.written[config.src]) {
+		this._dependencies.written[config.src] = true;
+		var script = this.doc.createElement('SCRIPT');
 		script.setAttribute('src', config.src);
-        if(config.async) {script.setAttribute('async', 'async');}
-        if(config.defer) {script.setAttribute('defer', 'defer');}
-        // call _waitListener when loaded
-        script.onload = I._waitListener;
-        // IE
-        script.onreadystatechange = function() {
-            if(script.readyState == 'loaded') {
-                I._waitListener.call(script);
-            }
-        };
-        this.doc.getElementsByTagName('HEAD')[0].appendChild(script);
-    }
+		if(config.async) {script.setAttribute('async', 'async');}
+		if(config.defer) {script.setAttribute('defer', 'defer');}
+		// call _waitListener when loaded
+		script.onload = I._waitListener;
+		// IE
+		script.onreadystatechange = function() {
+			if(script.readyState == 'loaded') {
+				I._waitListener.call(script);
+			}
+		};
+		this.doc.getElementsByTagName('HEAD')[0].appendChild(script);
+	}
 };
