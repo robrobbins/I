@@ -57,37 +57,6 @@ You can pass an array of namespaces as well:
 Make sure to use the namespace that is actually provided in a call to
 I.provide() or listed in the 'provides' array in the deps.js file
 
-###Deps.js
-
-This is a Ruby utility program which reads your source code
-recursively, starting at your root directory (well, the directory you place it 
-in which should be the root of your site), 
-looking for I.provide(...) and I.require(...) statements. It uses these to
-calculate and print out a file named *deps.js*. This file contains multiple
-calls to I.addDependency(...) which in turn tell I.require() where named
-modules actually are in your project, and how to load them. 
-Take the deps.js from this project:
-
-    I.addDependency('vendor/jquery.js', ['jquery'], [], true);
-    I.addDependency('site/test.js', ['TEST'], ['jquery'], false, true);
-
-The first tells i.js that any:
-
-    I.require('jquery', true);
-
-Can be resolved by looking in *(base_path)/vendor/* for *jquery.js*. This is
-what gets written to the *src* attribute of the tag. The empty array indicates
-that this module has no stated dependencies. The true tells I to append the 
-async attribute to the script tag.
-
-The second instructs I to, when encountering an:
-
-    I.require('TEST', false, true);
-
-To first load the dependency named 'jquery' (the 3rd arg is an array of dependencies), then loading
-the module providing 'TEST' which is found at *base_path/site/test.js*. This
-tag should have the *defer* attribute set
-
 #####Note
 
 The boolean values in the the deps.js file are there because of the boolean
@@ -101,6 +70,19 @@ would overwrite them.
 You can require a file multiple times but the first seen definition is what
 will be used by subsequent requires.
 
+###Preload Is In
+You can cache scripts WITHOUT parsing them by using the new I.cache method:
+
+	I.cache('foo')
+	I.cache('bar')
+	I.cache('baz')
+	
+Then whenever you want said resource to actually be injected and parsed:
+
+	I.parse(['foo', 'bar', 'baz'], function() {
+		//do stuff depending on foo, bar and baz...
+	});
+	
 ###Depwriter
 
 A ruby utility program that scans your directories by filetypes (configurable, 
@@ -119,27 +101,9 @@ Any scripts found in those folders will be added as *providers*. You can then
 require them by their script name minus the extension:
 
 	I.require('jquery')
-	
+
 Note that we are not using the actual namespace provided by the file (that would 
 have been 'jQuery' or '$') as we do with our own files.
-
-####Jquery Plugin Caveat
-
-Open the sorce file of the plugin and wrap the anonymous function that 
-the plugin executes like so:
-
-	I.amDefined('jquery', function() {
-		//plugin source here...
-	});
-
-This way your jQuery plugins won't try to locate jQuery itself before it is done parsing. 
-Considering the size difference of jQuery verses most plugins this is a very likely 
-scenario.
-
-The next version of i.js (ETA this weekend) adds prefetch/caching of scripts a la' 
-Stoyan's [preload](http://www.phpied.com/preload-then-execute/). Which works well for
-this in some cases and doesn't require wrapping the source code (though I prefer the wrapping 
-technique for plugins).
 
 This is definitely the Alpha release of Depwriter as it is in a very raw state, but
 you can use it now if you follow a couple of simple set-up steps (see the source).
@@ -159,13 +123,40 @@ Once you've done that, cd into the root of your project and enter:
 This will result in the *deps.js* file being written and placed into the 
 directory where i.js is.
 
-###Blog Posts / Screencasts coming
+###Deps.js
 
-I'll do some this week.
+This file contains multiple calls to I.addDependency(...) which in turn tell 
+I.require() where namedmodules actually are in your project, and how to load them. 
+Take the deps.js from this project:
 
-###Forthcoming Changes
+	I.addDependency('js/vendor/bgiframe.js', ['bgiframe'], [], false, false);
+	I.addDependency('js/vendor/dimensions.js', ['dimensions'], [], false, false);
+	I.addDependency('js/vendor/rml.js', ['rml'], [], false, true);
+	I.addDependency('js/vendor/tooltip.js', ['tooltip'], [], false, false);
+	I.addDependency('js/vendor/delegate.js', ['delegate'], [], false, false);
+	I.addDependency('js/site/test.js', ['TEST'], ['rml','jquery'], false, true);
+	I.addDependency('js/vendor/jquery.js', ['jquery'], [], true, false);
 
-I'll probably move the 4 configuration steps into a .yaml file and load them from
-there. 
+The last entry (for example) tells i.js that any:
+
+    I.require('jquery', true);
+
+Can be resolved by looking in *(base_path)/vendor/* for *jquery.js*. This is
+what gets written to the *src* attribute of the tag. The empty array indicates
+that this module has no stated dependencies. The true tells I to append the 
+async attribute to the script tag.
+
+The second instructs I to, when encountering an:
+
+    I.require('TEST', false, true);
+
+To first load the dependency named 'jquery' (the 3rd arg is an array of dependencies), then loading
+the module providing 'TEST' which is found at *base_path/site/test.js*. This
+tag should have the *defer* attribute set
+
+###Coming up
+
+An abstraction of the common.js define() global function. This is really easy since I just
+need to parse the args into the proper calls to I.provide, I.require, and I.amDefined.
 	
 	
