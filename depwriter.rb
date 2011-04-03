@@ -13,6 +13,13 @@ search_ext = ['js', 'html']
 # directory name, or array of names (relative to root), that hold 
 # third party scripts you want added as dependencies
 ven_dirs = ['js/vendor']
+# properties of this object will be written to deps.js
+# load attribute booleans are optional of course
+# {'local name': ['adress to dependency', async, defer]}
+# TODO document the //... workaround for https:// with IE
+cdn_hosted = {
+  'jquery' => ['http://code.jquery.com/jquery-1.5.2.min.js', true]
+}
 
 require ".#{rb_dir}/utils.rb"
 require ".#{rb_dir}/dependencies.rb"
@@ -25,6 +32,8 @@ Dependencies.build_from_files(Utils.source_files)
 # manually comment the next method call out
 Dependencies.add_third_party(Utils.source_files, 
   Utils.arr_to_hash(ven_dirs))
+# add any cdn hosted dependencies so that files requiring one will resolve
+Dependencies.add_cdn(cdn_hosted)
 # put the hash together
 Dependencies.build_matched_hash
 if Dependencies.resolve_deps

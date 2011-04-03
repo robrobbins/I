@@ -143,10 +143,25 @@ module Dependencies
       if ven_dirs[File.dirname(file)]
         prov = File.basename(file, '.js')
         dep.provides_push(prov)
-        # NOTE without adding them manually, third_party libs
-        # cannot declare requires()
+        # TODO without adding them manually, third_party libs
+        # cannot declare requires[]. Do they then cease to be
+        # '3rd party'? This may be a non-issue
         @all.unshift(dep)
       end
+    }
+  end
+  
+  def self.add_cdn(cdns)
+    # will not use source_files as we don't have them
+    cdns.each {|k, v|
+      # v[0] should be the actual URI of the dependency
+      dep = Dependant.new(v[0])
+      # it provides a namespace object
+      dep.provides_push(k)
+      # TODO same as third_party (which these usually are), any
+      # dependencies would need to be declared manually. this could easily
+      # be done in the cdns{}. Is there a use case for this?
+      @all.unshift(dep)
     }
   end
 
