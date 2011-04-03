@@ -2,9 +2,15 @@
 
 // creates a 'namespace'
 I.provide('TEST');
-// make jquery avail. true = use async tag
+
 I.require('rml', false, true);
 I.require('jquery', true);
+I.require('TEST.reallyawesome', true);
+// NOTE this is not actually necessary because you will get both
+// because they are in the same file (ra.js). Explicitness however is
+// preferred IMO
+I.require('TEST.alsoreallyawesome', true);
+
 I.cache('tooltip');
 I.cache('bgiframe');
 I.cache('delegate');
@@ -12,7 +18,7 @@ I.cache('dimensions');
 
 // setup a method to call when tooltips are ready
 TEST.tooltips = function() {
-	$('#ta_output').val('So, mouse over the "What for thing..."');
+	this.show('So, mouse over the "What\'s this for? thing"');
 	$("#hovered").tooltip({ 
         bodyHandler: function() { 
             return "ITS FOR A TOOLTIP!!!"; 
@@ -21,17 +27,25 @@ TEST.tooltips = function() {
     });
 };
 
-I.amDefined(['jquery','rml'], function() {
-	$('#ta_output').val('jQuery and rml are loaded and parsed now');
+TEST.show = function(str) {
+	// show stuff in the textarea
+	var ta = $('#ta_output');
+	curr_val = [ta.val()];
+	curr_val.push(str);
+	ta.val(curr_val.join('\n'));
+};
+
+I.amDefined(['jquery','rml','TEST.reallyawesome','TEST.alsoreallyawesome'], function() {
+	TEST.show('jQuery and rml are loaded and parsed now');
+	
+	// the required ra.js script provided these
+	TEST.show(TEST.reallyawesome.hello());
+	TEST.show(TEST.alsoreallyawesome.hello());
 	
 	$('#btn_cached').click(function() {
-		
 		I.parse(['dimensions','delegate','bgiframe','tooltip'], function() {
-			
-			$('#ta_output').val('All four dependencies loaded and parsed');
-			
+			TEST.show('All four dependencies loaded and parsed');
 			TEST.tooltips();
-			
 		});
 	});
 });
