@@ -83,6 +83,22 @@ Then whenever you want said resource to actually be injected and parsed:
 		//do stuff depending on foo, bar and baz...
 	});
 	
+###CDN Hosting Support
+A dependency (like jQuery for example) can be loaded from a CDN. For this
+to function correctly simply it in the 'cdn_hosted' hash at line 20 in 
+depwriter.rb. The syntax is:
+	
+	{
+		provide => [URI, async, defer]
+	}
+	
+This example site defines a CDN-hosted version of jQuery for example:
+	{
+		'jquery' => ['http://code.jquery.com/jquery-1.5.2.min.js', true]
+	}
+
+You may notice this has no mechinism for declaring a requires list. That could
+easily be implemented, I just don't know if that is necessary...
 ###Depwriter
 
 A ruby utility program that scans your directories by filetypes (configurable, 
