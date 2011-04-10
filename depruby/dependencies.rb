@@ -155,7 +155,7 @@ module Dependencies
     # will not use source_files as we don't have them
     cdns.each {|k, v|
       # v[0] should be the actual URI of the dependency
-      dep = Dependant.new(v[0])
+      dep = Dependant.new(v)
       # it provides a namespace object
       dep.provides_push(k)
       # TODO same as third_party (which these usually are), any
