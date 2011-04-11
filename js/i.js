@@ -458,14 +458,16 @@ I._writeScriptTag = function(config) {
 		script.setAttribute('src', config.src);
 		if(config.async) {script.setAttribute('async', 'async');}
 		if(config.defer) {script.setAttribute('defer', 'defer');}
-		// call _waitListener when loaded
-		script.onload = I._waitListener;
-		// IE
-		script.onreadystatechange = function() {
-			if(script.readyState == 'loaded') {
-				I._waitListener.call(script);
-			}
-		};
+		if(I.amIE) {
+			script.onreadystatechange = function() {
+				if(script.readyState == 'loaded'|| script.readyState == 'complete') {
+					I._waitListener.call(script);
+				}
+			};	
+		} else {
+			// call _waitListener when loaded
+			script.onload = I._waitListener;
+		}
 		this.doc.getElementsByTagName('HEAD')[0].appendChild(script);
 	}
 };
