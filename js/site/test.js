@@ -6,7 +6,7 @@ I.provide('TEST');
 I.require('rml', false, true);
 I.require('jquery', true);
 I.require('TEST.reallyawesome', true);
-// NOTE this is not actually necessary because you will get both
+// NOTE this is not actually actually necessary. You will get both
 // because they are in the same file (ra.js). Explicitness however is
 // preferred IMO
 I.require('TEST.alsoreallyawesome', true);
