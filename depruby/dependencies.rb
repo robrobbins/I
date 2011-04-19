@@ -76,6 +76,7 @@ module Dependencies
   # namespaces which have been found
   @resolved = []
   # regexes for finding our statements
+  #@re_defines = Regexp.new(define)
   @re_provides = Regexp.new('I\.provide\s*\(\s*[\'\"]([^\)]+)[\'\"]\s*\)')
   @re_requires = Regexp.new('I\.require\s*\(\s*[\'\"]([^\)]+)[\'\"]\s*(?:,)*\s*(true|false)?\s*(?:,)*\s*(true|false)?\s*\)')
   @re_caches = Regexp.new('I\.cache\s*\(\s*[\'\"]([^\)]+)[\'\"]\s*\)')

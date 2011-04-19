@@ -1,16 +1,5 @@
-// silly test things...
-
-// creates a 'namespace'
-I.provide('TEST');
-
-I.require('rml', false, true);
-I.require('jquery', true);
-I.require('TEST.reallyawesome', true);
-// NOTE this is not actually actually necessary. You will get both
-// because they are in the same file (ra.js). Explicitness however is
-// preferred IMO
-I.require('TEST.alsoreallyawesome', true);
-
+// the AMD spec really has no room for this minus adding more
+// args to define(...). leave it seperate for now.
 I.cache('tooltip');
 I.cache('bgiframe');
 I.cache('delegate');
@@ -35,12 +24,13 @@ TEST.show = function(str) {
 	ta.val(curr_val.join('\n'));
 };
 
-I.amDefined(['jquery','rml','TEST.reallyawesome','TEST.alsoreallyawesome'], function() {
-	TEST.show('jQuery and rml are loaded and parsed now');
+define('TEST',['jQuery','RML','TEST.reallyawesome'], 
+	function($, RML, ra_) {
+	TEST.show('jQuery and RML are loaded and parsed now');
 	
 	// the required ra.js script provided these
-	TEST.show(TEST.reallyawesome.hello());
-	TEST.show(TEST.alsoreallyawesome.hello());
+	TEST.show(ra_.hello());
+	// TEST.show(ara_.alsoreallyawesome.hello());
 	
 	$('#btn_cached').click(function() {
 		I.parse(['dimensions','delegate','bgiframe','tooltip'], function() {

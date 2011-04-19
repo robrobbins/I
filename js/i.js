@@ -65,38 +65,38 @@ I._amCachedChk = function(ns) {
  * @param fn The function to call when ns = true
  */
 I.amDefined = function(ns, fn) {
-	var nsa, nss, fna, tmp=[];
-	// Normalize the inputs
+	var nsa, nss, fna, undef=0, args = [];
+	// Normalize the inputs...
+	// could be a single dependency
 	if(typeof ns === 'string') {
 		nsa = ns.split('>');
 	} else {
 		nsa = ns;
 	}
+	// the case of identical sets of requires. a single key may hold
+	// multiple callback functions
 	if(typeof fn === 'function') {
 		fna = [fn];
 	} else {
 		fna = fn;
 	}
-	// clear out any defined tokens first
-	// using the _amLoaded memoized hash 
-	// instead of getObjectByName
-	for(var n; n = nsa.shift(); ) {
-		if(this.amLoaded(n)) {
-			var pass;
+	// check for defined tokens using the _amLoaded memoized hash 
+	for(var n=0, len=nsa.length; n < len; n++) {
+		if(this.amLoaded(nsa[n])) {
+			// pass a reference of the defined token(s) to the callback
+			args.push(this.getNamespace(nsa[n]));
 		} else {
-			tmp.push(n);
+			undef++;
 		}
 	}
 	// all are defined, we're done here
-	if(!tmp.length) {
+	if(undef === 0) {
 		for(var f; f = fna.shift(); ) {
-			f.call(this.global);
+			f.apply(this.global, args);
 		}
 	} else {
-		// one left, assign to nss as is
-		if(tmp.length === 1) {nss = tmp[0];}
 		// multiple left, make a composite key and assign it to nss
-		else {nss = tmp.join('>');}
+		nss = nsa.join('>');
 		// key = nss, val = [fn,...]
 		// val needs to be an array for multiple callbacks
 		// waiting on the same ns or combination of them
@@ -137,6 +137,18 @@ I._amWaiting = {};
 I._amWaitingChk = function(ns) {
 	return ns in this._amWaiting;
 };
+/**
+ * Combined with anonPrefix we can keep internal identities for
+ * anonymous modules
+ * @private
+ */
+I._anonCounter = 0;
+/**
+ * Combined with anonCounter we can keep internal identities for
+ * anonymous modules
+ * @private
+ */
+I._anonPrefix = 'anon_';
 /**
  * Lookup for which tags should be written with the async attribute.
  * Note that if you require the same file multiple times with this pref set
@@ -211,26 +223,27 @@ I.doc = document;
  * is I.global.
  * @private
  */
-I._exportPath = function(name, obj, scope) {
+I._exportNamespace = function(name, obj, scope) {
+	// TODO Update to use '/' as delimiters as well
   var parts = name.split('.');
   var cur = scope || this.global;
 
   // fix for Internet Explorer's strange behavior
   if (!(parts[0] in cur) && cur.execScript) {
-	cur.execScript('var ' + parts[0]);
+		cur.execScript('var ' + parts[0]);
   }
   // TODO re-evaluate this (no comp step)
   // ...use a for-loop and reserve the init logic as below.
   // Parentheses added to eliminate strict JS warning in Firefox.
   for (var part; parts.length && (part = parts.shift());) {
-	if (!parts.length && obj) {
+		if (!parts.length && obj) {
 	  // last part and we have an object; use it
-	  cur[part] = obj;
-	} else if (cur[part]) {
+	  	cur[part] = obj;
+		} else if (cur[part]) {
 	  cur = cur[part];
-	} else {
-	  cur = cur[part] = {};
-	}
+		} else {
+	  	cur = cur[part] = {};
+		}
   }
 };
 /**
@@ -250,7 +263,7 @@ I._getDepsFromPath = function(path) {
  * @param {Object=} scope The object within which to look. Default is I.global.
  * @return {Object} The object or, if not found, null.
  */
-I.getObjectByName = function(name, scope) {
+I.getNamespace = function(name, scope) {
   var parts = name.split('.');
   var cur = scope || this.global;
   for (var part; part = parts.shift(); ) {
@@ -302,8 +315,7 @@ I._ns = {};
  */
 I.parse = function(ns, fn) {
 	// allow for an array of strings
-	if(typeof ns !== 'string') {
-		//assume an array
+	if(I._toStr.call(ns) === '[object Array]') {
 		for(var i = 0; i < ns.length; i++) {
 			this.require(ns[i]); // load_attr moot here?
 		}
@@ -320,7 +332,7 @@ I.parse = function(ns, fn) {
  */
 I.provide = function(name) {
 	// Ensure that the same namespace isn't provided twice.
-	if(I.getObjectByName(name) && !I._ns[name]) {
+	if(I.getNamespace(name) && !I._ns[name]) {
 		throw Error('Namespace "' + name + '" already declared.');
 	}
 	var namespace = name;
@@ -328,7 +340,7 @@ I.provide = function(name) {
 		namespace.lastIndexOf('.')))) {
 			this._ns[namespace] = true;
 	}
-	this._exportPath(name);
+	this._exportNamespace(name);
 };
 /**
  * Implements a system for the dynamic resolution of dependencies
@@ -361,6 +373,11 @@ I.require = function(ns, async, defer) {
 		throw Error(errorMessage); 
 	}
 };
+/**
+ * Ref the Objects toString method so we can do some type checking
+ * @private
+ */
+I._toStr = Object.prototype.toString;
 /**
  * Allow newly loaded scripts to check for callbacks.
  * Remember, <this> is the script element...
@@ -413,7 +430,7 @@ I._writeScripts = function() {
 			for (var requireName in deps.requires[path]) {
 				if(requireName in deps.nameToPath) {
 					visitNode(deps.nameToPath[requireName]);
-				} else if(!I.getObjectByName(requireName)) {
+				} else if(!I.getNamespace(requireName)) {
 					// If the required name is defined, we assume that this
 					// dependency was bootstapped by other means. Otherwise,
 					// throw an exception.
@@ -471,3 +488,48 @@ I._writeScriptTag = function(config) {
 		this.doc.getElementsByTagName('HEAD')[0].appendChild(script);
 	}
 };
+/**
+ * Global declaration and parsing for the commonJS 'define' function
+ * see http://wiki.commonjs.org/wiki/Modules/AsynchronousDefinition
+ * @param {String} id What the AMD proposal calls an 'id' is what i.js
+ * sees as a declaration of a dependency object (depwriter version)
+ * @param {Array} dependencies
+ * @param {Function} factory What i.js sees as amDefined()
+ */
+if(!window.define) {
+	window.define = function(/* var_args */) {
+		var args = Array.prototype.slice.call(arguments), ns;
+		// optional 'id'. depwriter would have used this as a 'provide' alrerady
+		// use it to provide a namespace in the case of
+		if(I._toStr.call(args[0]) === '[object String]') {
+			ns = args.shift();
+		}
+		// now the '2nd' arg
+		switch(I._toStr.call(args[0])) {
+		case '[object Array]':
+			// I.parse can handle the primary use case here
+			if(args[1] && typeof args[1] === 'function') {
+				I.parse(args[0], args[1]);
+			} else {
+				throw Error('Unsupported use of dependencies');
+			}
+			break;
+		case '[object Function]':
+			// TODO support this use case or not?
+			throw Error('Function as first argument unsupported at this time');
+			break;
+		case '[object Object]':
+			// FIXME logic for getting filename clientside id not given
+			if(!ns) {
+				var scripts = document.getElementsByTagName('script');
+				var lastScript = scripts[scripts.length-1];
+				ns = lastScript.src;
+			}
+			I._exportNamespace(ns, args[0]);
+			break;
+		default:
+			throw Error('Unsupported argument type');
+		}
+	};
+	window.define.amd = {};
+} 

@@ -17,7 +17,7 @@ ven_dirs = ['js/vendor']
 # {'provided name': 'adress to dependency'}
 # TODO document the //... workaround for https:// with IE
 cdn_hosted = {
-  'jquery' => 'http://code.jquery.com/jquery-1.5.2.min.js'
+  'jQuery' => 'http://code.jquery.com/jquery-1.5.2.min.js'
 }
 
 require ".#{rb_dir}/utils.rb"
