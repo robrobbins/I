@@ -12,19 +12,15 @@
  */
 var I = I || {};
 /**
- * Adds a dependency from a file to the files it requires. Reads the async or
- * defer attributes if present in I.require() and sets them in the
- * corresponding dependency list lookup hash 
+ * Adds a dependency from a file to the files it requires.
  * @param {string} relPath The path to the js file.
  * @param {Array} provides An array of strings with the names of the objects
  * this file provides.
  * @param {Array} requires An array of strings with the names of the objects
  * this file requires.
- * @param {Boolean} async should an entry be placed in the async hash
- * @param {Boolean} defer should an entry be placed in the defer hash
  * @link I.require
  */
-I.addDependency = function(relPath, provides, requires, async, defer) {
+I.addDependency = function(relPath, provides, requires) {
 	var provide, require;
 	var path = relPath.replace(/\\/g, '/');
 	var deps = this._dependencies;
@@ -41,8 +37,6 @@ I.addDependency = function(relPath, provides, requires, async, defer) {
 		}
 		deps.requires[path][require] = true;
 	}
-	if(async) {this._async[path] = true;}
-	if(defer) {this._defer[path] = true;}
 };
 /**
  * Lookup for I.Cache method
@@ -50,61 +44,71 @@ I.addDependency = function(relPath, provides, requires, async, defer) {
  */
 I._amCached = {};
 /**
- * Method to check _amCached object for ns
- * @param ns The namespace to check for
- * @return {Boolean}
- */
-I._amCachedChk = function(ns) {
-	return ns in this._amCached;
-};
-/**
- * If a specified namespace is not defined yet this method
- * maintains a queue of functions to call when it becomes available
- * @param {String|Array} ns The namespace to check for, either 
+ * If a specified namespace, including dependencies, is not defined yet this method
+ * stores its callback to call when available
+ * @param {String|Array} ns The provided namespace
+ * @param {String|Array} dep one or more dependencies of the provided namespace,
  * a string or an array of strings
- * @param fn The function to call when ns = true
+ * @param fn The function to call when dep(s) are defined
  */
-I.amDefined = function(ns, fn) {
-	var nsa, nss, fna, undef=0, args = [];
+I.amDefined = function(ns, dep, fn) {
+	var deps, comp, undef=0, args = [], _deps = this._dependencies;
 	// Normalize the inputs...
-	// could be a single dependency
-	if(typeof ns === 'string') {
-		nsa = ns.split('>');
-	} else {
-		nsa = ns;
+	// an anonymous callback
+	if(!ns) {
+		ns = this._anonPrefix + this._anonCounter;
+		this._anonCounter++;
 	}
-	// the case of identical sets of requires. a single key may hold
-	// multiple callback functions
-	if(typeof fn === 'function') {
-		fna = [fn];
+	// could be a single dependency or a composite set
+	if(typeof dep === 'string') {
+		deps = dep.split('&');
 	} else {
-		fna = fn;
+		deps = dep;
 	}
-	// check for defined tokens using the _amLoaded memoized hash 
-	for(var n=0, len=nsa.length; n < len; n++) {
-		if(this.amLoaded(nsa[n])) {
-			// pass a reference of the defined token(s) to the callback
-			args.push(this.getNamespace(nsa[n]));
+	if(typeof fn !== 'function') {
+		throw Error('Missing or incorrect type of callback parameter');
+	}
+	// checking for defined tokens
+	for(var n=0, len=deps.length; n < len; n++) {
+		var curr = deps[n];
+		if(curr in this._amLoaded) {
+			// the dep is loaded, see if its deps are loaded
+			var dds = _deps.requires[_deps.nameToPath[curr]];
+			// may have no dependencies of its own
+			if(dds) {
+				for(var dd in dds) {
+					if(!(dd in this._amLoaded)) {
+						undef++;
+						break;
+					}
+					// we need to wait for any dep's callbacks which haven't
+					// been called yet
+					if(!(dd in this.amVendor)) {
+						if(!this._returnForName[dd]) {
+								undef++;
+								break;
+						}
+					}
+				}	
+			}
+			// pass the return value of the namespace's callback or a global ref
+			// to a dep with no callback
+			args.push(this._returnForName[curr] || this.getNamespace(curr));
 		} else {
 			undef++;
 		}
 	}
 	// all are defined, we're done here
 	if(undef === 0) {
-		for(var f; f = fna.shift(); ) {
-			f.apply(this.global, args);
-		}
+		// callbacks should return a val
+		this._returnForName[ns] = fn.apply(this.global, args);
 	} else {
-		// multiple left, make a composite key and assign it to nss
-		nss = nsa.join('>');
-		// key = nss, val = [fn,...]
-		// val needs to be an array for multiple callbacks
-		// waiting on the same ns or combination of them
-		if (!this._amWaitingChk(nss)) {
-			this._amWaiting[nss] = [];
-		}
-		for(var cb; cb = fna.shift(); ) {
-			this._amWaiting[nss].push(cb); 
+		// multiple left, make a composite key and assign it to comp
+		comp = deps.join('&');
+		// ns = comp : fn
+		if (!(ns in this._amWaiting)) {
+			this._amWaiting[ns] = {};
+			this._amWaiting[ns][comp] = fn;
 		}
 	}
 };
@@ -117,26 +121,15 @@ I.amIE = navigator.appName.indexOf('Microsoft') === 0;
  * @private
  */
 I._amLoaded = {};
-/**
- * Check for loaded dependencies by their provided namespaces.
- * If a script has been written and parsed this method will return true.
- * @param {String} ns. The namespace explicitly provided by a Dependency.
- */
-I.amLoaded = function(ns) {
-	return ns in this._amLoaded;
+// TODO create a setter for this hash
+I.amVendor = {
+	'jQuery': true
 };
 /**
  * The queue for waiting namespaces and their callbacks
  * @private
  */
 I._amWaiting = {};
-/**
- * Check _amWaiting for a given namespace
- * @private
- */
-I._amWaitingChk = function(ns) {
-	return ns in this._amWaiting;
-};
 /**
  * Combined with anonPrefix we can keep internal identities for
  * anonymous modules
@@ -150,13 +143,6 @@ I._anonCounter = 0;
  */
 I._anonPrefix = 'anon_';
 /**
- * Lookup for which tags should be written with the async attribute.
- * Note that if you require the same file multiple times with this pref set
- * they will overwrite.
- * @private
- */
-I._async = {};
-/**
  * Fetch and store a script in the browser cache. See 
  * http://www.phpied.com/preload-cssjavascript-without-execution/.
  * @param {String|Array} ns. The namespace that is explicitly provided by the
@@ -167,31 +153,24 @@ I.cache = function(ns) {
 	if(typeof ns !== 'string') {
 		//assume an array
 		for(var n; n = ns.shift(); ) {
-			I.cache(n);
+			this.cache(n);
 		}
 		return;
 	}
 	// already cached?
-	if(I._amCachedChk(ns)) {return;}
+	if(ns in this._amCached) {return;}
 	// depending on browser, preload the script as...
-	if(I.amIE) {
+	if(this.amIE) {
 		new Image().src = this._dependencies.nameToPath[ns];
 	} else {
-		o = document.createElement('object');
+		var o = document.createElement('object');
 		o.data = this._dependencies.nameToPath[ns];
 		o.width = 0;
 		o.height = 0;
 		document.body.appendChild(o);
 	}
-	I._amCached[ns] = true;
+	this._amCached[ns] = true;
 };
-/**
- * Lookup for which tags should be written with the defer attribute.
- * Note that if you require the same file multiple times with this pref set
- * they will overwrite.
- * @private
- */
-I._defer = {};
 /**
  * This object is used to keep track of dependencies and other data that is
  * used for loading scripts
@@ -309,28 +288,40 @@ I._included = {};
  */
 I._ns = {};
 /**
- * Start the require(), amDefined() flow for cached scripts.
- * @type {String|Array}
- * @private
+ * Normalize varying arguments. Call require() and amDefined() for
+ * both the AMD define(...) and __parse__ methods
  */
-I.parse = function(ns, fn) {
-	// allow for an array of strings
-	if(I._toStr.call(ns) === '[object Array]') {
-		for(var i = 0; i < ns.length; i++) {
-			this.require(ns[i]); // load_attr moot here?
+I.parse = function(/* var_args */) {
+	// normalize the inputs
+	var fn, dep, ns;
+	if(arguments.length === 3) {
+		fn = arguments[2];
+	}
+	if(fn) {
+		dep = arguments[1];
+		ns = arguments[0];
+	} else {
+		fn = arguments[1];
+		dep = arguments[0];
+		ns = false;
+	}
+	if(typeof dep !== 'string') {
+		// assume an array
+		for(var i = 0; i < dep.length; i++) {
+			this.require(dep[i]);
 		}
 	} else {
-		this.require(ns);
-	}
-	// should always be a callback 
-	this.amDefined(arguments[0], arguments[1]);
+		this.require(dep);
+	} 
+	this.amDefined(ns, dep, fn);
 };
 /**
  * Creates object stubs for a namespace. When present in a file, I.provide
  * also indicates that the file defines the indicated object.
  * @param {string} name name of the object that this file defines.
+ * @param {Object} obj An optional object to pass along to _exportNamespace
  */
-I.provide = function(name) {
+I.provide = function(name, obj) {
 	// Ensure that the same namespace isn't provided twice.
 	if(I.getNamespace(name) && !I._ns[name]) {
 		throw Error('Namespace "' + name + '" already declared.');
@@ -340,30 +331,19 @@ I.provide = function(name) {
 		namespace.lastIndexOf('.')))) {
 			this._ns[namespace] = true;
 	}
-	this._exportNamespace(name);
+	this._exportNamespace(name, obj);
 };
 /**
  * Implements a system for the dynamic resolution of dependencies
  * @param {string} ns Module to include, should match a 'provide'
  * in deps.js 
- * @param {Boolean} async Should the async attribute be set on this script 
- * tag when written
- * @param{Boolean} defer Should the defer attribute be written
  */
-I.require = function(ns, async, defer) {
-	// if the declared provide has been loaded, we are done
-	if (I.amLoaded(ns)) {
-		return;
-	}
+I.require = function(ns) {
+	// don't load more than once
+	if(ns in this._amLoaded) return;
 	var _path = this._getPathFromDeps(ns);
 	if (_path) {
 		this._included[_path] = true;
-		if(async) {
-			this._async[_path] = true; 
-		}
-		if(defer) {
-			this._defer[_path] = true;
-		}
 		this._writeScripts();
 	} else {
 		var errorMessage = 'I.require could not find: ' + ns;
@@ -374,13 +354,19 @@ I.require = function(ns, async, defer) {
 	}
 };
 /**
+ * Named dependency objects with callbacks return a value
+ * They are kept here so they can be passed to the callbacks
+ * of others that require them
+ * @ private
+ */
+I._returnForName = {};
+/**
  * Ref the Objects toString method so we can do some type checking
  * @private
  */
 I._toStr = Object.prototype.toString;
 /**
- * Allow newly loaded scripts to check for callbacks.
- * Remember, <this> is the script element...
+ * Callback for when a script has been injected and parsed
  * @private
  */
 I._waitListener = function() {
@@ -392,12 +378,14 @@ I._waitListener = function() {
 		I._amLoaded[k] = true;
 	}
 	// push the wait list through amDefined
-	var cp = I._amWaiting;
+	var waiting = I._amWaiting;
 	// inf loop === bad
 	I._amWaiting = {};
-	for(var p in cp) {
-		if(cp.hasOwnProperty(p)) {
-			I.amDefined(p, cp[p]);
+	for(var ns in waiting) {
+		if(waiting.hasOwnProperty(ns)) {
+			for(var dep in waiting[ns]) {
+				I.amDefined(ns, dep, waiting[ns][dep]);
+			}
 		}
 	}
 };
@@ -451,30 +439,23 @@ I._writeScripts = function() {
 	}
 	for(var i = 0; i < scripts.length; i++) {
 		if(scripts[i]) {
-			this._writeScriptTag({
-				src: scripts[i],
-				async: this._async[scripts[i]] || false,
-				defer: this._defer[scripts[i]] || false
-			});
-			
+			this._writeScriptTag(scripts[i]);
 		} else {
-			throw Error('Undefined script input');
+			throw Error('Undefined dependency');
 		}
 	}
 };
 /**
- * Writes a script tag (with async or defer attributes) if 
+ * Writes a script tag if 
  * that script hasn't already been added to the document.	
  * @param {Object} config Hash of attributes
  * @private
  */
-I._writeScriptTag = function(config) {
-	if(!this._dependencies.written[config.src]) {
-		this._dependencies.written[config.src] = true;
+I._writeScriptTag = function(src) {
+	if(!this._dependencies.written[src]) {
+		this._dependencies.written[src] = true;
 		var script = this.doc.createElement('SCRIPT');
-		script.setAttribute('src', config.src);
-		if(config.async) {script.setAttribute('async', 'async');}
-		if(config.defer) {script.setAttribute('defer', 'defer');}
+		script.setAttribute('src', src);
 		if(I.amIE) {
 			script.onreadystatechange = function() {
 				if(script.readyState == 'loaded'|| script.readyState == 'complete') {
@@ -492,44 +473,70 @@ I._writeScriptTag = function(config) {
  * Global declaration and parsing for the commonJS 'define' function
  * see http://wiki.commonjs.org/wiki/Modules/AsynchronousDefinition
  * @param {String} id What the AMD proposal calls an 'id' is what i.js
- * sees as a declaration of a dependency object (depwriter version)
+ * sees as a declaration of a provided namespace
+ * @param {String} namespace The provided namespace
  * @param {Array} dependencies
  * @param {Function} factory What i.js sees as amDefined()
  */
-if(!window.define) {
-	window.define = function(/* var_args */) {
-		var args = Array.prototype.slice.call(arguments), ns;
-		// optional 'id'. depwriter would have used this as a 'provide' alrerady
-		// use it to provide a namespace in the case of
-		if(I._toStr.call(args[0]) === '[object String]') {
-			ns = args.shift();
+window.define = function(/* var_args */) {
+	var args = Array.prototype.slice.call(arguments), ns;
+	// optional 'id'. depwriter would have used this as a 'provide' alrerady
+	// use it to provide a namespace in the case of
+	if(I._toStr.call(args[0]) === '[object String]') {
+		ns = args.shift();
+	}
+	// now the '2nd' arg
+	switch(I._toStr.call(args[0])) {
+	case '[object Array]':
+		// if we have a namespace provide it
+		if(ns) {
+			//TODO replace '/' with '.'
+			I.provide(ns);
+		} else ns = false;
+		// I.parse can handle the primary use case here
+		if(args[1] && typeof args[1] === 'function') {
+			I.parse(ns, args[0], args[1]);
+		} else {
+			throw Error('Unsupported use of dependencies');
 		}
-		// now the '2nd' arg
-		switch(I._toStr.call(args[0])) {
-		case '[object Array]':
-			// I.parse can handle the primary use case here
-			if(args[1] && typeof args[1] === 'function') {
-				I.parse(args[0], args[1]);
-			} else {
-				throw Error('Unsupported use of dependencies');
-			}
-			break;
-		case '[object Function]':
-			// TODO support this use case or not?
-			throw Error('Function as first argument unsupported at this time');
-			break;
-		case '[object Object]':
-			// FIXME logic for getting filename clientside id not given
-			if(!ns) {
-				var scripts = document.getElementsByTagName('script');
-				var lastScript = scripts[scripts.length-1];
-				ns = lastScript.src;
-			}
-			I._exportNamespace(ns, args[0]);
-			break;
-		default:
-			throw Error('Unsupported argument type');
+		break;
+	case '[object Function]':
+		// TODO support this use case or not?
+		throw Error('Function as first argument unsupported at this time');
+		break;
+	case '[object Object]':
+		// FIXME logic for getting filename clientside id not given
+		if(!ns) {
+			var scripts = document.getElementsByTagName('script');
+			var lastScript = scripts[scripts.length-1];
+			ns = lastScript.src;
 		}
-	};
-	window.define.amd = {};
-} 
+		// this will mixin the namespace to global and add the properties to it
+		I.provide(ns, args[0]);
+		break;
+	default:
+		throw Error('Unsupported argument type');
+	}
+};
+window.define.amd = {};
+/**
+ * The AMD spec does not provide a 'preload' functionality. The 
+ * global __cache__ function remedies this.
+ * @param {String | Array} namespace(s) The provided name, or an array of them,
+ * to cache
+ * @link I.cache
+ */
+__cache__ = function() {I.cache.apply(I, arguments);};
+/**
+ * The counterpart of __cache__. The dependecies defined by the passed in
+ * arguments will be injected.
+ * @param {String | Array} namespace The provided name of a dependency to write
+ * @link I.parse
+ */
+__parse__ = function() {I.parse.apply(I, arguments);};
+/**
+ * Alias for I.require
+ * @param {String | Array} namespace A dependency to write
+ * @link I.require
+ */
+window.require = function() {I.require.apply(I, arguments);};
