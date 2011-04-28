@@ -481,7 +481,6 @@ I._writeScriptTag = function(src) {
 window.define = function(/* var_args */) {
 	var args = Array.prototype.slice.call(arguments), ns;
 	// optional 'id'. depwriter would have used this as a 'provide' alrerady
-	// use it to provide a namespace in the case of
 	if(I._toStr.call(args[0]) === '[object String]') {
 		ns = args.shift();
 	}
@@ -501,8 +500,7 @@ window.define = function(/* var_args */) {
 		}
 		break;
 	case '[object Function]':
-		// TODO support this use case or not?
-		throw Error('Function as first argument unsupported at this time');
+		throw Error('Function as first argument unsupported');
 		break;
 	case '[object Object]':
 		// FIXME logic for getting filename clientside id not given

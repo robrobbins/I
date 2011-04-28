@@ -27,5 +27,4 @@ versions. It's define() or nothin'...Highlights would be:
 	2. A global method __cache__
 	3. A global method __parse__
 	
-More on these soon.
-
+More on these soon, see the included example for more...
