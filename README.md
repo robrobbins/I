@@ -19,8 +19,8 @@ CommonJS 'define()' syntax can be used:
 The included sample page has an example using jQuery and some plugins.
 
 ###API Changes
-Though completely backwards compatible (I think...) there are some API changes
-which 'hide' the underlying 'I' object.
+The AMD branch of i.js is not meant to be backwards compatible with non-amd 
+versions. It's define() or nothin'...Highlights would be:
 
 	1. The alredy mentioned global define(...) method
 	2. The global require(...) method
@@ -28,12 +28,4 @@ which 'hide' the underlying 'I' object.
 	3. A global method __parse__
 	
 More on these soon.
-	
-###Not Quite Ready Yet
-...I have to write in support for the 'define()' method into depwriter so 
-check back later this week for that. Until then you can hand-write the 
-deps.js file (see the included example). Also a non-depwriter version (no depwriter, no deps.js) should be
-done as well. This version simply calls I.addDependency from 'define()'
 
-###The other branches
-Don't forget the older branches for completed and working older versions...

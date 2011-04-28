@@ -2,7 +2,7 @@ i_am = File.expand_path($PROGRAM_NAME)
 i_root = File.dirname(i_am)
 # TODO Move this section to a config file
 # location of ruby files relative to depwriter
-rb_dir = '/iRuby'
+rb_dir = '/depruby'
 # dirname, relative to root, where i.js is
 i_dir = 'js'
 # a portion of the filename that should be removed when served (this is used
@@ -51,7 +51,7 @@ if Dependencies.resolve_deps
         # no section to remove
         fn = dep.filename
       end
-      deps.puts "I.addDependency('#{fn}', #{dep.get_provides}, #{dep.get_requires}, #{dep.get_load_attrs});"
+      deps.puts "I.addDependency('#{fn}', #{dep.provides}, #{dep.requires});"
     }
   end
   puts "deps.js written, moving back to #{i_root}"

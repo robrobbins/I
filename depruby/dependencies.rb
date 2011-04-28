@@ -1,68 +1,82 @@
 require 'set'
 # An instance of a dependency object
 class Dependant
-  # the boolean instance vars
-  attr_accessor :async, :defer
+  
+  attr_accessor :is_cdn, :is_vendor
   
   def initialize(filename)
     @filename = filename
-    @provides = []
-    @requires = []
-    @caches = []
-    @async = nil
-    @defer = nil
+    @provides = ''
+    @provides_array = nil
+    @requires = ''
+    @requires_array = nil
+    @provides_appended = false
+    @requires_appended = false
+    @re_quoted = /'(.*?)'/
+    @is_vendor = false
+    @is_cdn = false
   end
   
   def filename; @filename; end
-  def requires; @requires; end
-  def provides; @provides; end
-  def caches; @caches; end
+  def requires 
+    return '[' << @requires << ']' 
+  end
+  def provides
+    if @is_vendor == true or @is_cdn == true
+      "['#{@provides}']"
+    else
+      '[' << @provides << ']'
+    end
+  end
+  def requires_array; @requires_array; end
+  def provides_array; @provides_array; end
   
-  def provides_push(val)
-    @provides.push(val)
+  def provides_append(val)
+    if @provides_appended == false
+      @provides << val
+      @provides_appended = true
+    else
+      @provides << ', ' << val
+    end
   end
   
-  def get_provides
-    return get_collection(@provides)
+  def provides_to_array
+    if @provides != ''
+      @provides_array = format_array(@provides.split(','))
+    else
+      @provides_array = []
+    end
   end
   
-  def requires_push(val)
-    @requires.push(val)
+  def requires_append(val)
+    if @requires_appended == false
+      @requires << val
+      @requires_appended = true
+    else
+      @requires << ', ' << val
+    end
   end
   
-  def get_requires
-    return get_collection(@requires)
+  def requires_to_array
+    if @requires != ''
+      @requires_array = format_array(@requires.split(','))
+    else
+      @requires_array = []
+    end
   end
   
-  def caches_push(val)
-    @caches.push(val)
-  end
-  
-  def get_caches
-    return get_collection(@caches)
-  end
-  
-  def get_collection(which)
-    # need them encased in single quotes
-    # TODO can we do this w/interp somehow? 
-    str = '['
-    which.each {|x| str = str + "'" + x + "'" + ","}
-    # remove the last comma
-    if str[-1] == 44: str[-1] = '' end
-    str += ']'
-    return str
-  end
-  
-  def get_load_attrs
-      if @async.nil?: @async = false end
-      if @defer.nil?: @defer = false end
-      return "#{@async}, #{@defer}"
+  def format_array(arr)
+    arr.each_index {|i|
+      if data = @re_quoted.match(arr[i])
+        arr[i] = data.captures[0]
+        arr[i].gsub!(/\s/, '')
+      end
+    }
+    arr      
   end
   
   def to_s
-    ps = @provides.join(',')
-    rs = @requires.join(',')
-    "#{@filename} provides (#{ps}), requires (#{rs}), async = #{@async} and defer = #{@defer}"
+    "#{@filename} provides (#{@provides}), requires (#{@requires})"
   end
 end
 
@@ -71,16 +85,13 @@ module Dependencies
   @all = []
   # these have provide / require statements
   @matched = {}
-  # how the dependencies should be loaded
-  @req_attr = {}
   # namespaces which have been found
   @resolved = []
-  # regexes for finding our statements
-  #@re_defines = Regexp.new(define)
-  @re_provides = Regexp.new('I\.provide\s*\(\s*[\'\"]([^\)]+)[\'\"]\s*\)')
-  @re_requires = Regexp.new('I\.require\s*\(\s*[\'\"]([^\)]+)[\'\"]\s*(?:,)*\s*(true|false)?\s*(?:,)*\s*(true|false)?\s*\)')
-  @re_caches = Regexp.new('I\.cache\s*\(\s*[\'\"]([^\)]+)[\'\"]\s*\)')
-  
+  # regexes for finding our define statements
+  @def_ns_deps_and_cb = /define\s*\(\s*(['"A-Za-z.\/_]*),\s*\[(['" A-Za-z,.\/_]*)\](?:.*)/
+  @def_deps_and_cb = /define\s*\(\s*\[(['" A-Za-z,.\/_]*)\](?:.*)/
+  @def_ns_and_obj = /define\s*\(\s*(['"A-Za-z.\/_]*),\s*\{(?:.*)/
+  @re_require = /require\s*\(\s*(['"A-Za-z.\/_]+)\s*\)/
   def self.build_from_files(files)
     # make sure there are no dupes in the files array
     sources = Set.new(files)
@@ -97,35 +108,24 @@ module Dependencies
       f.close
       # iterate each line and look for statements
       txt.each_line {|line|
-        if data = @re_provides.match(line)
+        if data = @def_ns_deps_and_cb.match(line)
           is_dep = true
-          data.captures.each {|i|
-            dep.provides_push(i)
-          }
-        elsif mdata = @re_requires.match(line)
-          is_dep = true
-          # seperate the required namespace from the load
-          # attributes of the script tag it writes
-          mdata.captures.each_index {|j|
-            # the first is a namespace
-            if j == 0
-              dep.requires_push(mdata.captures[0])
-              # save the load attributes for this ns
-              @req_attr[mdata.captures[0]] = {}
-            # 1 is the async flag
-            elsif j == 1
-              @req_attr[mdata.captures[0]]['async'] = mdata.captures[1]
-            # 2 is the defer flag
-            elsif j == 2
-              @req_attr[mdata.captures[0]]['defer'] = mdata.captures[2]
+          data.captures.each_with_index {|o,i|
+            if i == 0
+              dep.provides_append(o)
+            elsif i == 1
+              dep.requires_append(o)
             end
           }
-        elsif ndata = @re_caches.match(line)
+        elsif mdata = @def_deps_and_cb.match(line)
           is_dep = true
-          ndata.captures.each {|k|
-            puts "pushing #{k} into cached array"
-            dep.caches_push(k)
-          }
+          dep.requires_append(mdata.captures[0])
+        elsif ndata = @def_ns_and_obj.match(line)
+          is_dep = true
+          dep.provides_append(ndata.captures[0])
+        elsif odata = @re_require.match(line)
+          is_dep = true
+          dep.requires_append(odata.captures[0])  
         end
       }
       @all.push(dep) if is_dep == true
@@ -143,10 +143,10 @@ module Dependencies
       # ven_dir should have been hashed already
       if ven_dirs[File.dirname(file)]
         prov = File.basename(file, '.js')
-        dep.provides_push(prov)
-        # TODO without adding them manually, third_party libs
-        # cannot declare requires[]. Do they then cease to be
-        # '3rd party'? This may be a non-issue
+        dep.provides_append(prov)
+        # provide for formatting the output correctly
+        dep.is_vendor = true
+        # third_party libs cannot declare requires[].
         @all.unshift(dep)
       end
     }
@@ -158,10 +158,8 @@ module Dependencies
       # v[0] should be the actual URI of the dependency
       dep = Dependant.new(v)
       # it provides a namespace object
-      dep.provides_push(k)
-      # TODO same as third_party (which these usually are), any
-      # dependencies would need to be declared manually. this could easily
-      # be done in the cdns{}. Is there a use case for this?
+      dep.provides_append(k)
+      dep.is_cdn = true
       @all.unshift(dep)
     }
   end
@@ -169,22 +167,17 @@ module Dependencies
   def self.build_matched_hash
     @all.each { |dep|
       puts "found #{dep.filename}"
-      dep.provides.each {|ns|
+      # build the provides array from the string
+      dep.provides_to_array()
+      dep.provides_array.each {|ns|
         puts "it provides #{ns}"
-        if attr_obj = @req_attr[ns]
-          # NOTE files will only get one set of load attributes
-          # they could be overwritten if required 2 different ways...
-          dep.async = attr_obj['async']
-          dep.defer = attr_obj['defer']
-          puts "and has the load attributes async = #{dep.async}, defer = #{dep.defer}"
-        end
         # dont provide the same ns more than once
-        if @matched[ns].nil?
+        if ns != '' and @matched[ns].nil?
           # {namespace: dependency}
           puts "assigning #{ns} to matched hash"
           @matched[ns] = dep
         else
-          puts "#{@hash[ns]} already provided by #{ns}"
+          puts "#{@matched[ns]} already provided by #{ns}"
         end
       }
     }
@@ -192,22 +185,12 @@ module Dependencies
   
   def self.resolve_deps
     @matched.each_value { |dep|
-      dep.requires.each { |req|
+      dep.requires_to_array()
+      dep.requires_array.each { |req|
         puts "Resolving required namespace #{req}"
         if result = resolve_req(req)
-          puts result
         else
           puts "Missing provider for #{req}"
-          return false
-        end
-      }
-      # now resolve the caches
-      dep.caches.each { |c|
-        puts "Resolving cached namespace #{c}"
-        if result = resolve_req(c)
-          puts result
-        else
-          puts "Missing provider for #{c}"
           return false
         end
       }

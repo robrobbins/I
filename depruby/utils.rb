@@ -30,7 +30,7 @@ module Utils
     arr.each {|i|
       h[i] = true
     }
-    return h
+    h
   end
   
 end

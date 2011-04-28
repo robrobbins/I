@@ -1,9 +1,6 @@
 // the AMD spec really has no room for this minus adding more
 // args to define(...). leave it seperate for now.
-__cache__('tooltip');
-__cache__('bgiframe');
-__cache__('delegate');
-__cache__('dimensions');
+__cache__(['tooltip','bgiframe','delegate','dimensions']);
 
 define('TEST',['jQuery','RML','TEST.reallyawesome'], 
 	function($, RML, ra_) {
