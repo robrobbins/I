@@ -2,8 +2,8 @@
 // args to define(...). leave it seperate for now.
 __cache__(['tooltip','bgiframe','delegate','dimensions']);
 
-define('TEST',['jQuery','RML','TEST.reallyawesome'], 
-	function($, RML, ra_) {
+define('TEST',['jQuery','RML','TEST.reallyAwesome'], 
+	function($, RML, awesome) {
 
 	// setup a method to call when tooltips are ready
 	TEST.tooltips = function() {
@@ -27,7 +27,7 @@ define('TEST',['jQuery','RML','TEST.reallyawesome'],
 	TEST.show('jQuery and RML are loaded and parsed now');
 	
 	// the required ra.js script provided these
-	TEST.show(ra_.hello());
+	TEST.show(awesome.hello());
 	// TEST.show(ara_.alsoreallyawesome.hello());
 	
 	$('#btn_cached').click(function() {

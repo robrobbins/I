@@ -1,6 +1,5 @@
 /**
  * @fileOverview Dependency management with magical powers
- * Largely based on the code from Google's Closure Library
  * @author <a href="www.github.com/robrobbins/I">Rob Robbins</a>
  * @version 0.0.1
  */
@@ -10,7 +9,7 @@
  * already defined in the current scope before assigning to prevent
  * overwrite.
  */
-var I = I || {};
+var __i__ = __i__ || {};
 /**
  * Adds a dependency from a file to the files it requires.
  * @param {string} relPath The path to the js file.
@@ -18,12 +17,12 @@ var I = I || {};
  * this file provides.
  * @param {Array} requires An array of strings with the names of the objects
  * this file requires.
- * @link I.require
+ * @link __i__.require
  */
-I.addDependency = function(relPath, provides, requires) {
+__i__.addDependency = function(relPath, provides, requires) {
 	var provide, require;
 	var path = relPath.replace(/\\/g, '/');
-	var deps = this._dependencies;
+	var deps = this.dependencies;
 	for (var i = 0; provide = provides[i]; i++) {
 		deps.nameToPath[provide] = path;
 		if (!(path in deps.pathToNames)) {
@@ -39,10 +38,10 @@ I.addDependency = function(relPath, provides, requires) {
 	}
 };
 /**
- * Lookup for I.Cache method
+ * Lookup for __i__.Cache method
  * @private
  */
-I._amCached = {};
+__i__.amCached = {};
 /**
  * If a specified namespace, including dependencies, is not defined yet this method
  * stores its callback to call when available
@@ -51,13 +50,13 @@ I._amCached = {};
  * a string or an array of strings
  * @param fn The function to call when dep(s) are defined
  */
-I.amDefined = function(ns, dep, fn) {
-	var deps, comp, undef=0, args = [], _deps = this._dependencies;
+__i__.amDefined = function(ns, dep, fn) {
+	var deps, comp, undef=0, args = [], _deps = this.dependencies;
 	// Normalize the inputs...
 	// an anonymous callback
 	if(!ns) {
-		ns = this._anonPrefix + this._anonCounter;
-		this._anonCounter++;
+		ns = this.anonPrefix + this.anonCounter;
+		this.anonCounter++;
 	}
 	// could be a single dependency or a composite set
 	if(typeof dep === 'string') {
@@ -71,20 +70,20 @@ I.amDefined = function(ns, dep, fn) {
 	// checking for defined tokens
 	for(var n=0, len=deps.length; n < len; n++) {
 		var curr = deps[n];
-		if(curr in this._amLoaded) {
+		if(curr in this.amLoaded) {
 			// the dep is loaded, see if its deps are loaded
 			var dds = _deps.requires[_deps.nameToPath[curr]];
 			// may have no dependencies of its own
 			if(dds) {
 				for(var dd in dds) {
-					if(!(dd in this._amLoaded)) {
+					if(!(dd in this.amLoaded)) {
 						undef++;
 						break;
 					}
 					// we need to wait for any dep's callbacks which haven't
 					// been called yet
 					if(!(dd in this.amVendor)) {
-						if(!this._returnForName[dd]) {
+						if(!this.returnForName[dd]) {
 								undef++;
 								break;
 						}
@@ -93,7 +92,7 @@ I.amDefined = function(ns, dep, fn) {
 			}
 			// pass the return value of the namespace's callback or a global ref
 			// to a dep with no callback
-			args.push(this._returnForName[curr] || this.getNamespace(curr));
+			args.push(this.returnForName[curr] || this.getNamespace(curr));
 		} else {
 			undef++;
 		}
@@ -101,54 +100,54 @@ I.amDefined = function(ns, dep, fn) {
 	// all are defined, we're done here
 	if(undef === 0) {
 		// callbacks should return a val
-		this._returnForName[ns] = fn.apply(this.global, args);
+		this.returnForName[ns] = fn.apply(this.global, args);
 	} else {
 		// multiple left, make a composite key and assign it to comp
 		comp = deps.join('&');
 		// ns = comp : fn
-		if (!(ns in this._amWaiting)) {
-			this._amWaiting[ns] = {};
-			this._amWaiting[ns][comp] = fn;
+		if (!(ns in this.amWaiting)) {
+			this.amWaiting[ns] = {};
+			this.amWaiting[ns][comp] = fn;
 		}
 	}
 };
 /**
- * Quick IE check for I.cache
+ * Quick IE check for __i__.cache
  */
-I.amIE = navigator.appName.indexOf('Microsoft') === 0;
+__i__.amIE = navigator.appName.indexOf('Microsoft') === 0;
 /**
  * A lookup for loaded scripts by their provided namespaces.
  * @private
  */
-I._amLoaded = {};
+__i__.amLoaded = {};
 // TODO create a setter for this hash
-I.amVendor = {
+__i__.amVendor = {
 	'jQuery': true
 };
 /**
  * The queue for waiting namespaces and their callbacks
  * @private
  */
-I._amWaiting = {};
+__i__.amWaiting = {};
 /**
  * Combined with anonPrefix we can keep internal identities for
  * anonymous modules
  * @private
  */
-I._anonCounter = 0;
+__i__.anonCounter = 0;
 /**
  * Combined with anonCounter we can keep internal identities for
  * anonymous modules
  * @private
  */
-I._anonPrefix = 'anon_';
+__i__.anonPrefix = 'anon_';
 /**
  * Fetch and store a script in the browser cache. See 
  * http://www.phpied.com/preload-cssjavascript-without-execution/.
  * @param {String|Array} ns. The namespace that is explicitly provided by the
  * dependency you want to cache
  */
-I.cache = function(ns) {
+__i__.cache = function(ns) {
 	// allow for an array of strings
 	if(typeof ns !== 'string') {
 		//assume an array
@@ -158,18 +157,18 @@ I.cache = function(ns) {
 		return;
 	}
 	// already cached?
-	if(ns in this._amCached) {return;}
+	if(ns in this.amCached) {return;}
 	// depending on browser, preload the script as...
 	if(this.amIE) {
-		new Image().src = this._dependencies.nameToPath[ns];
+		new Image().src = this.dependencies.nameToPath[ns];
 	} else {
 		var o = document.createElement('object');
-		o.data = this._dependencies.nameToPath[ns];
+		o.data = this.dependencies.nameToPath[ns];
 		o.width = 0;
 		o.height = 0;
 		document.body.appendChild(o);
 	}
-	this._amCached[ns] = true;
+	this.amCached[ns] = true;
 };
 /**
  * This object is used to keep track of dependencies and other data that is
@@ -177,7 +176,7 @@ I.cache = function(ns) {
  * @private
  * @type {Object}
  */
-I._dependencies = {
+__i__.dependencies = {
 	pathToNames: {}, // 1 to many
 	nameToPath: {}, // 1 to 1
 	requires: {}, // 1 to many
@@ -189,20 +188,20 @@ I._dependencies = {
 /**
  * Reference for the current document.
  */
-I.doc = document;
+__i__.doc = document;
 /**
  * Builds an object structure for the provided namespace path,
  * ensuring that names that already exist are not overwritten. For
  * example:
  * "a.b.c" -> a = {};a.b={};a.b.c={};
- * Used by I.provide
+ * Used by __i__.provide
  * @param {string} name name of the object that this file defines.
  * @param {*=} obj the object to expose at the end of the path.
  * @param {Object=} scope The object to add the path to; default
- * is I.global.
+ * is __i__.global.
  * @private
  */
-I._exportNamespace = function(name, obj, scope) {
+__i__.exportNamespace = function(name, obj, scope) {
 	// TODO Update to use '/' as delimiters as well
   var parts = name.split('.');
   var cur = scope || this.global;
@@ -229,9 +228,9 @@ I._exportNamespace = function(name, obj, scope) {
  * Get the namespace(s) provided by a file
  * @private
  */
-I._getDepsFromPath = function(path) {
-	if (path in this._dependencies.pathToNames) {
-		return this._dependencies.pathToNames[path];
+__i__.getDepsFromPath = function(path) {
+	if (path in this.dependencies.pathToNames) {
+		return this.dependencies.pathToNames[path];
 	} else {
 		return null;
 	}
@@ -239,10 +238,10 @@ I._getDepsFromPath = function(path) {
 /**
  * Returns an object based on its fully qualified external name.
  * @param {string} name The fully qualified name.
- * @param {Object=} scope The object within which to look. Default is I.global.
+ * @param {Object=} scope The object within which to look. Default is __i__.global.
  * @return {Object} The object or, if not found, null.
  */
-I.getNamespace = function(name, scope) {
+__i__.getNamespace = function(name, scope) {
   var parts = name.split('.');
   var cur = scope || this.global;
   for (var part; part = parts.shift(); ) {
@@ -257,13 +256,13 @@ I.getNamespace = function(name, scope) {
 /**
  * Looks at the dependency paths and tries to determine the script file that
  * fulfills a particular path.
- * @param {string} path In the form I.namespace.Class or project.script
+ * @param {string} path In the form __i__.namespace.Class or project.script
  * @return {?string} Url corresponding to the path, or null.
  * @private
  */
-I._getPathFromDeps = function(path) {
-	if (path in this._dependencies.nameToPath) {
-		return this._dependencies.nameToPath[path];
+__i__.getPathFromDeps = function(path) {
+	if (path in this.dependencies.nameToPath) {
+		return this.dependencies.nameToPath[path];
 	} else {
 		return null;
 	}
@@ -271,27 +270,27 @@ I._getPathFromDeps = function(path) {
 /**
  * Reference for the current context. Except of special cases it will be 'window'
  */
-I.global = this;
+__i__.global = this;
 /**
  * Object used to keep track of urls that have already been added. This
  * record allows the prevention of circular dependencies.
  * @type {Object}
  * @private
  */
-I._included = {};
+__i__.included = {};
 /**
  * Namespaces implicitly defined by provide. For example,
- * provide('I.foo.bar') implicitly declares
- * that 'I' and 'I.foo' must be namespaces.
+ * provide('__i__.foo.bar') implicitly declares
+ * that 'I' and '__i__.foo' must be namespaces.
  * @type {Object}
  * @private
  */
-I._ns = {};
+__i__.ns = {};
 /**
  * Normalize varying arguments. Call require() and amDefined() for
  * both the AMD define(...) and __parse__ methods
  */
-I.parse = function(/* var_args */) {
+__i__.parse = function(/* var_args */) {
 	// normalize the inputs
 	var fn, dep, ns;
 	if(arguments.length === 3) {
@@ -316,37 +315,37 @@ I.parse = function(/* var_args */) {
 	this.amDefined(ns, dep, fn);
 };
 /**
- * Creates object stubs for a namespace. When present in a file, I.provide
+ * Creates object stubs for a namespace. When present in a file, __i__.provide
  * also indicates that the file defines the indicated object.
  * @param {string} name name of the object that this file defines.
  * @param {Object} obj An optional object to pass along to _exportNamespace
  */
-I.provide = function(name, obj) {
+__i__.provide = function(name, obj) {
 	// Ensure that the same namespace isn't provided twice.
-	if(I.getNamespace(name) && !I._ns[name]) {
+	if(this.getNamespace(name) && !this.ns[name]) {
 		throw Error('Namespace "' + name + '" already declared.');
 	}
 	var namespace = name;
 	while ((namespace = namespace.substring(0, 
 		namespace.lastIndexOf('.')))) {
-			this._ns[namespace] = true;
+			this.ns[namespace] = true;
 	}
-	this._exportNamespace(name, obj);
+	this.exportNamespace(name, obj);
 };
 /**
  * Implements a system for the dynamic resolution of dependencies
  * @param {string} ns Module to include, should match a 'provide'
  * in deps.js 
  */
-I.require = function(ns) {
+__i__.require = function(ns) {
 	// don't load more than once
-	if(ns in this._amLoaded) return;
-	var _path = this._getPathFromDeps(ns);
+	if(ns in this.amLoaded) return;
+	var _path = this.getPathFromDeps(ns);
 	if (_path) {
-		this._included[_path] = true;
-		this._writeScripts();
+		this.included[_path] = true;
+		this.writeScripts();
 	} else {
-		var errorMessage = 'I.require could not find: ' + ns;
+		var errorMessage = '__i__.require could not find: ' + ns;
 		if (this.global.console) {
 			this.global.console['error'](errorMessage);
 		}
@@ -359,32 +358,32 @@ I.require = function(ns) {
  * of others that require them
  * @ private
  */
-I._returnForName = {};
+__i__.returnForName = {};
 /**
  * Ref the Objects toString method so we can do some type checking
  * @private
  */
-I._toStr = Object.prototype.toString;
+__i__.toStr = Object.prototype.toString;
 /**
  * Callback for when a script has been injected and parsed
  * @private
  */
-I._waitListener = function() {
+__i__.waitListener = function() {
 	// use the path to get an object
-	var obj = I._getDepsFromPath(this.getAttribute('src'));
+	var obj = __i__.getDepsFromPath(this.getAttribute('src'));
 	// the obj has 'provide' tokens as keys
 	for(var k in obj) {
 		// done in-loop to handle multiple provides per file
-		I._amLoaded[k] = true;
+		__i__.amLoaded[k] = true;
 	}
 	// push the wait list through amDefined
-	var waiting = I._amWaiting;
+	var waiting = __i__.amWaiting;
 	// inf loop === bad
-	I._amWaiting = {};
+	__i__.amWaiting = {};
 	for(var ns in waiting) {
 		if(waiting.hasOwnProperty(ns)) {
 			for(var dep in waiting[ns]) {
-				I.amDefined(ns, dep, waiting[ns][dep]);
+				__i__.amDefined(ns, dep, waiting[ns][dep]);
 			}
 		}
 	}
@@ -394,11 +393,11 @@ I._waitListener = function() {
  * and calls _writeScriptTag accordingly.
  * @private
  */
-I._writeScripts = function() {
+__i__.writeScripts = function() {
 	// the scripts we need to write this time
 	var scripts = [];
 	var seenScript = {};
-	var deps = this._dependencies;
+	var deps = this.dependencies;
 
 	/** @private */ function visitNode(path) {
 		if(path in deps.written) {
@@ -418,7 +417,7 @@ I._writeScripts = function() {
 			for (var requireName in deps.requires[path]) {
 				if(requireName in deps.nameToPath) {
 					visitNode(deps.nameToPath[requireName]);
-				} else if(!I.getNamespace(requireName)) {
+				} else if(!__i__.getNamespace(requireName)) {
 					// If the required name is defined, we assume that this
 					// dependency was bootstapped by other means. Otherwise,
 					// throw an exception.
@@ -432,14 +431,14 @@ I._writeScripts = function() {
 		}
 	} // end visitNode
 
-	for(var path in this._included) {
+	for(var path in this.included) {
 		if(!deps.written[path]) {
 			visitNode(path);
 		}
 	}
 	for(var i = 0; i < scripts.length; i++) {
 		if(scripts[i]) {
-			this._writeScriptTag(scripts[i]);
+			this.writeScriptTag(scripts[i]);
 		} else {
 			throw Error('Undefined dependency');
 		}
@@ -451,20 +450,22 @@ I._writeScripts = function() {
  * @param {Object} config Hash of attributes
  * @private
  */
-I._writeScriptTag = function(src) {
-	if(!this._dependencies.written[src]) {
-		this._dependencies.written[src] = true;
+__i__.writeScriptTag = function(src) {
+	if(!this.dependencies.written[src]) {
+		this.dependencies.written[src] = true;
 		var script = this.doc.createElement('SCRIPT');
 		script.setAttribute('src', src);
-		if(I.amIE) {
+		// Handle gecko long-polling issue
+		script.setAttribute('async', 'async');
+		if(__i__.amIE) {
 			script.onreadystatechange = function() {
 				if(script.readyState == 'loaded'|| script.readyState == 'complete') {
-					I._waitListener.call(script);
+					__i__.waitListener.call(script);
 				}
 			};	
 		} else {
 			// call _waitListener when loaded
-			script.onload = I._waitListener;
+			script.onload = __i__.waitListener;
 		}
 		this.doc.getElementsByTagName('HEAD')[0].appendChild(script);
 	}
@@ -481,36 +482,34 @@ I._writeScriptTag = function(src) {
 window.define = function(/* var_args */) {
 	var args = Array.prototype.slice.call(arguments), ns;
 	// optional 'id'. depwriter would have used this as a 'provide' alrerady
-	if(I._toStr.call(args[0]) === '[object String]') {
+	if(__i__.toStr.call(args[0]) === '[object String]') {
 		ns = args.shift();
 	}
 	// now the '2nd' arg
-	switch(I._toStr.call(args[0])) {
+	switch(__i__.toStr.call(args[0])) {
 	case '[object Array]':
 		// if we have a namespace provide it
 		if(ns) {
 			//TODO replace '/' with '.'
-			I.provide(ns);
+			__i__.provide(ns);
 		} else ns = false;
-		// I.parse can handle the primary use case here
+		// __i__.parse can handle the primary use case here
 		if(args[1] && typeof args[1] === 'function') {
-			I.parse(ns, args[0], args[1]);
+			__i__.parse(ns, args[0], args[1]);
 		} else {
 			throw Error('Unsupported use of dependencies');
 		}
 		break;
 	case '[object Function]':
-		throw Error('Function as first argument unsupported');
+		throw Error('Anonymous define with only a function unsupported');
 		break;
 	case '[object Object]':
 		// FIXME logic for getting filename clientside id not given
 		if(!ns) {
-			var scripts = document.getElementsByTagName('script');
-			var lastScript = scripts[scripts.length-1];
-			ns = lastScript.src;
+			throw Error('Anonymous define with only an object unsupported');
 		}
 		// this will mixin the namespace to global and add the properties to it
-		I.provide(ns, args[0]);
+		__i__.provide(ns, args[0]);
 		break;
 	default:
 		throw Error('Unsupported argument type');
@@ -522,19 +521,19 @@ window.define.amd = {};
  * global __cache__ function remedies this.
  * @param {String | Array} namespace(s) The provided name, or an array of them,
  * to cache
- * @link I.cache
+ * @link __i__.cache
  */
-__cache__ = function() {I.cache.apply(I, arguments);};
+__cache__ = function() {__i__.cache.apply(__i__, arguments);};
 /**
  * The counterpart of __cache__. The dependecies defined by the passed in
  * arguments will be injected.
  * @param {String | Array} namespace The provided name of a dependency to write
- * @link I.parse
+ * @link __i__.parse
  */
-__parse__ = function() {I.parse.apply(I, arguments);};
+__parse__ = function() {__i__.parse.apply(__i__, arguments);};
 /**
- * Alias for I.require
+ * Alias for __i__.require
  * @param {String | Array} namespace A dependency to write
- * @link I.require
+ * @link __i__.require
  */
-window.require = function() {I.require.apply(I, arguments);};
+window.__require__ = function() {__i__.require.apply(__i__, arguments);};
