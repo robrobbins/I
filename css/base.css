@@ -1,0 +1,26 @@
+/*MISC*/
+.green {
+	background-color:#98de31;
+}
+.slate {
+	background-color:#424242;
+}
+.ninja {
+	display:none;
+}
+#ta_output {
+	text-align: center;
+	font-size:14px;
+	font-weight:bold;
+	overflow:auto;
+}
+/*JQUERY TOOLTIP*/
+#tooltip {
+	position: absolute;
+	z-index: 3000;
+	border: 1px solid #111;
+	background-color: #eee;
+	padding: 5px;
+	opacity: 0.85;
+}
+#tooltip h3, #tooltip div { margin: 0; }

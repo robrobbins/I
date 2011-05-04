@@ -1,0 +1,58 @@
+depwriter:
+  # From where depwriter.rb is, how far up until the root of your project?
+  i_root: ../
+  # what is the name of the folder i.js is in?
+  i_dir: js
+  # Some environments will want a segment of the path for js files removed
+  # before being served depending on environment. For example to remove the 
+  # 'public/' path segment from a file found in 'public/scripts/foo.js' you 
+  # would set this val to "public/" resulting in 'scripts/foo.js' being 
+  # assigned as the path. It's this val that gets used as the 'src=' attribute
+  # of script tags written by i.js for all non-cdn dependencies
+  rm_dir: ''
+  # The extension names of files to be searched by the depwriter for define
+  # or require statements (minus the dot). This allows you to control what 
+  # types of files will be indexed as dependencies by filetype.
+  # Any file with an extension not in this list will be ignored, 
+  # so if your site uses '.erb' templates for example don't forget to add 'erb'
+  search_ext: 
+    - js
+    - html
+  # Directory paths (relative to root) to exclude from searching 
+  # for dependencies. This is another
+  # way of controlling what scripts would be indexed as dependencies.
+  # This is particularly useful for testing suites as when you move to
+  # production you can simply add the folder name here
+  exc_dirs: 
+    - extensions
+    - js/lib
+    - js/minified
+  # Directory paths (relative to root) where third party javascript files are 
+  # that you want added as dependecies. Since these files will not have any 
+  # 'define' or 'require' statements they normally wouldn't be detected. 
+  # Also note that the name of the file (minus ext) is what you will use to 
+  # require it
+  ven_dirs:
+    - js/vendor
+  # Dependencies which are CDN hosted by provided name and URL adress
+  # TODO document the //... workaround for https:// with IE
+  cdn_hosted:
+    jQuery: 'http://code.jquery.com/jquery-1.5.2.min.js'
+  # Boolean flag that when set to true creates minified versions of non-cdn
+  # and non-vendor dependencies. Default minifier is the Google Closure
+  # REST service but you can configure any minifier you want (see DEMAXIMIZER)
+  demaximize: false
+
+# A module, mixed in to the Dependant class, that allows it to minify itself.
+# I am using the Closure REST service but you can write you own demaximizer
+# and set its config info here. Depwriter simply looks to see if the 'demaximize'
+# flag has been set to true and calls the minify() method. Each instance of the
+# Dependant class keeps the raw js from your original script in the 
+# 'txt' instance variable so that is what you'll be minifying
+demaximizer:
+  url: 'http://closure-compiler.appspot.com/compile' 
+  comp_level: SIMPLE_OPTIMIZATIONS
+  output_format: text
+  output_info: compiled_code
+  min_suffix: .min
+  
