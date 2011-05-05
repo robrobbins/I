@@ -349,7 +349,7 @@ __i__.require = function(ns) {
 		if (this.global.console) {
 			this.global.console['error'](errorMessage);
 		}
-		throw Error(errorMessage); 
+		throw Error(errorMessage);
 	}
 };
 /**
@@ -460,6 +460,8 @@ __i__.writeScriptTag = function(src) {
 		if(__i__.amIE) {
 			script.onreadystatechange = function() {
 				if(script.readyState == 'loaded'|| script.readyState == 'complete') {
+					// don't respond twice...
+					script.onreadystatechange = null;
 					__i__.waitListener.call(script);
 				}
 			};	
@@ -496,12 +498,13 @@ window.define = function(/* var_args */) {
 		// __i__.parse can handle the primary use case here
 		if(args[1] && typeof args[1] === 'function') {
 			__i__.parse(ns, args[0], args[1]);
-		} else {
-			throw Error('Unsupported use of dependencies');
-		}
+		} else throw Error('Unsupported use of dependencies');
 		break;
 	case '[object Function]':
-		throw Error('Anonymous define with only a function unsupported');
+		if(ns) {
+			__i__.provide(ns);
+			__i__.parse(ns, [], args[0]);
+		} else throw Error('Anonymous define with only a function unsupported'); 
 		break;
 	case '[object Object]':
 		// FIXME logic for getting filename clientside id not given
@@ -536,4 +539,4 @@ __parse__ = function() {__i__.parse.apply(__i__, arguments);};
  * @param {String | Array} namespace A dependency to write
  * @link __i__.require
  */
-window.__require__ = function() {__i__.require.apply(__i__, arguments);};
+window.require = function() {__i__.require.apply(__i__, arguments);};
