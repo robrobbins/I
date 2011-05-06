@@ -10,7 +10,7 @@ CommonJS 'define()' syntax can be used:
 	define('FOO', ['FOO.bar, FOO.baz'], function(bar, baz) {
 		
 		// The top level FOO{} object now exists
-		foo.isAwesome = true;
+		FOO.isAwesome = true;
 		
 		// bar and baz have been passed in as args. They would have been
 		// scripts that provide FOO.bar and FOO.baz. Notice how we have
@@ -152,6 +152,21 @@ source attribute back to the non-minified file (make sure to run depwriter again
 As with the auto-generated *deps.js* file you don't have to worry about these,
 *i.js* takes care of them for you. Just go about developing your site then set
 the *demaximize* flag to true when you are ready to move to production.
+
+###Depwriter.rb
+A utility program that scans your project directory looking for dependencies,
+files with *define()* and *require()* depending on setting in the *config.yaml*
+file. *Depwriter.rb* produces the *deps.js* file that simply registers dependencies
+with *i.js* by name and path. This saves *i.js* from the inefficient task
+of having to resolve paths at runtime.
+
+See the docs and examples for usage. 
+
+###Deps.js
+One of 2 files that you include in your documents *head*, along with *i.js* itself.
+The deps.js file is an __auto-generated__ file that you don't have to worry
+about. While developing your site you will run *depwriter.rb* after making
+changes and this file will be produced.
 
 ###Don't Ask Me
 Try the included test-page example for yourself.
