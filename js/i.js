@@ -80,19 +80,26 @@ __i__.amDefined = function(ns, dep, fn) {
 						undef++;
 						break;
 					}
-					// we need to wait for any dep's callbacks which haven't
-					// been called yet
-					if(!(dd in this.amVendor)) {
+					// we need to wait for any dep's callbacks, when present,
+					// which haven't been called yet
+					if(!(dd in this.noCallback)) {
 						if(!this.returnForName[dd]) {
-								undef++;
-								break;
+							undef++;
+							break;
 						}
 					}
 				}	
 			}
-			// pass the return value of the namespace's callback or a global ref
-			// to a dep with no callback
-			args.push(this.returnForName[curr] || this.getNamespace(curr));
+			// now address the state of the [curr] dep's callback or lack thereof
+			if(curr in this.noCallback) {
+				args.push(this.getNamespace(curr));
+			} else {
+				if(!this.returnForName[curr]) {
+					undef++;
+					break;
+				}
+				args.push(this.returnForName[curr]);
+			}
 		} else {
 			undef++;
 		}
@@ -120,10 +127,6 @@ __i__.amIE = navigator.appName.indexOf('Microsoft') === 0;
  * @private
  */
 __i__.amLoaded = {};
-// TODO create a setter for this hash
-__i__.amVendor = {
-	'jQuery': true
-};
 /**
  * The queue for waiting namespaces and their callbacks
  * @private
@@ -279,6 +282,11 @@ __i__.global = this;
  */
 __i__.included = {};
 /**
+ * Some dependencies do not define callbacks, so don't wait for them
+ * @private
+ */
+__i__.noCallback = {};
+/**
  * Namespaces implicitly defined by provide. For example,
  * provide('__i__.foo.bar') implicitly declares
  * that 'I' and '__i__.foo' must be namespaces.
@@ -359,6 +367,21 @@ __i__.require = function(ns) {
  * @ private
  */
 __i__.returnForName = {};
+/**
+ * Simple setter for deps.js to call when i.js is being initialized
+ * @private
+ */
+__i__.setNoCallback = function(ns) {
+	// allow for an array of strings
+	if(typeof ns !== 'string') {
+		//assume an array
+		for(var n; n = ns.shift(); ) {
+			this.setNoCallback(n);
+		}
+		return;
+	}
+	this.noCallback[ns] = true;
+};
 /**
  * Ref the Objects toString method so we can do some type checking
  * @private

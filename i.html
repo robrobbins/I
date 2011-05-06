@@ -8,7 +8,10 @@
 		<script src="js/i.js"></script>
 		<script src="js/deps.js"></script>
 		<script>
-			__require__('TEST');
+			// don't put define() statements on non .js files
+			// use require to load you 'entry point' or bootstrap file
+			// see docs for more
+			require('TEST');
     </script>
 	</head>
 	<body>

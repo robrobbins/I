@@ -4,16 +4,18 @@ __cache__(['tooltip','bgiframe','delegate','dimensions']);
 
 define('TEST',['jQuery','RML','TEST.reallyAwesome'], 
 	function($, RML, awesome) {
-
-	// setup a method to call when tooltips are ready
-	TEST.tooltips = function() {
-		this.show('So, mouse over the "What\'s this for? thing"');
-		$("#hovered").tooltip({ 
-	        bodyHandler: function() { 
-	            return "ITS FOR A TOOLTIP!!!";
-	        }, 
-	        showURL: false
-	    });
+		
+		console.log('TEST callback called');
+		
+		// setup a method to call when tooltips are ready
+		TEST.tooltips = function() {
+			this.show('So, mouse over the "What\'s this for? thing"');
+			$("#hovered").tooltip({ 
+				bodyHandler: function() { 
+					return "ITS FOR A TOOLTIP!!!";
+				}, 
+				showURL: false
+	   });
 	};
 
 	TEST.show = function(str) {
@@ -25,10 +27,8 @@ define('TEST',['jQuery','RML','TEST.reallyAwesome'],
 	};
 	
 	TEST.show('jQuery and RML are loaded and parsed now');
-	
-	// the required ra.js script provided these
+		// the required ra.js script provided these
 	TEST.show(awesome.hello());
-	// TEST.show(ara_.alsoreallyawesome.hello());
 	
 	$('#btn_cached').click(function() {
 		__parse__(['dimensions','delegate','bgiframe','tooltip'], function() {
@@ -36,4 +36,8 @@ define('TEST',['jQuery','RML','TEST.reallyAwesome'],
 			TEST.tooltips();
 		});
 	});
+	
+	// as TEST acts as an entry point it doesn't need to return anything
+	// return TEST;
+	
 });

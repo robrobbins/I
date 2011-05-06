@@ -4,7 +4,7 @@ class Dependant
   # mixin allowing dependencies to minify themselves
   include Demaximizer
   
-  attr_accessor :is_cdn, :is_vendor, :txt
+  attr_accessor :is_cdn, :is_vendor, :no_callback, :txt
   
   def initialize(filename)
     @filename = filename
@@ -17,6 +17,7 @@ class Dependant
     @re_quoted = /'(.*?)'/
     @is_vendor = false
     @is_cdn = false
+    @no_callback = false
     @txt = nil
   end
   

@@ -91,7 +91,18 @@ this repo where *require()* is used on the index.html page.
 	require('TEST')
 	
 the dependency *test.js* provides *TEST* and *depwriter.rb* would have mapped those
-for you already. 
+for you already.
+
+####Caveat
+Don't put *define(...)* statements on non _*.js_ files. I have explored this
+quite a bit and decided that it is much more efficient to reserve them for 
+actual modules (your site's javascript files). Allowing define statements on
+_.html_ or other template pages would have added code to the callback listening
+mechanism _i.js_ employs. The *require()* statement is much better suited for
+this.
+
+A common use case is having a single *require('FOO')* statement in which the
+loaded 'foo.js' module is acting as a bootstrap, or main type of script.
 
 ###__cache__
 One of a two methods that now are prefixed and suffixed with double underscores (a la' 
@@ -143,7 +154,7 @@ As with the auto-generated *deps.js* file you don't have to worry about these,
 the *demaximize* flag to true when you are ready to move to production.
 
 ###Don't Ask Me
-Try the included test-page example for yourself
+Try the included test-page example for yourself.
 
 ##Not So Quick And Dirty Pt.2
 

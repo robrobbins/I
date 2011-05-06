@@ -45,13 +45,14 @@ module Dependencies
           dep.requires_append(mdata.captures[0])
         elsif ndata = @def_ns_and_obj.match(line)
           is_dep = true
+          dep.no_callback = true
           dep.provides_append(ndata.captures[0])
         elsif odata = @re_require.match(line)
           is_dep = true
           dep.requires_append(odata.captures[0])
         end
       }
-      @all.push(dep) if is_dep == true
+      @all.push(dep) if is_dep
     }
   end
 
@@ -105,10 +106,12 @@ module Dependencies
   
   def self.resolve_deps
     @matched.each_value { |dep|
+      puts dep
       dep.requires_to_array()
       dep.requires_array.each { |req|
         puts "Resolving required namespace #{req}"
         if result = resolve_req(req)
+          puts 'resolved'
         else
           puts "Missing provider for #{req}"
           return false

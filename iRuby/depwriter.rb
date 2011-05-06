@@ -43,7 +43,7 @@ if Dependencies.resolve_deps
         fn = dep.filename
       end
       # write deps with [min_suffix]?
-      if DW['demaximize'] == true and dep.is_cdn == false and dep.is_vendor == false
+      if DW['demaximize'] and not dep.is_cdn and not dep.is_vendor
         deps.puts "I.addDependency('#{dep.rename(fn, true)}', #{dep.provides}, #{dep.requires});"
         # move to root since all filenames are relative to it
         puts "moving #{I_ROOT_ABS}"
@@ -57,6 +57,9 @@ if Dependencies.resolve_deps
         Dir.chdir(I_DIR_ABS)
       else
         deps.puts "__i__.addDependency('#{fn}', #{dep.provides}, #{dep.requires});"
+        if dep.is_cdn or dep.is_vendor or dep.no_callback
+          deps.puts "__i__.setNoCallback(#{dep.provides});"
+        end
       end
     }
   end
