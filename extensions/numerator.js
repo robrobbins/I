@@ -1,6 +1,6 @@
-define('I._Numerator_', ['I.numerable', 'class'], function(num, C) {
+define('__i__.Numerator', ['__i__.numerable', 'class'], function(num, C) {
 	
-	I._Numerator_ = C.define({
+	__i__.Numerator = C.define({
 		ctor: function(it) {
 			// TODO typecheck it?
 			this.iterable = it;
@@ -84,5 +84,5 @@ define('I._Numerator_', ['I.numerable', 'class'], function(num, C) {
 				d === 2 ? this.index += 1 : this.index -= 1;
 		}
 	});
-	return I._Numerator_;
+	return __i__.Numerator;
 });

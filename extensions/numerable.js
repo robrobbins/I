@@ -1,6 +1,6 @@
 // 'I.Numerator' helper mixin, adapted from my own 'X' libraries
 // written for a series of articles in JSMag. see github.com/robrobbins/X
-define('I.numerable', {
+define('__i__.numerable', {
 	// For script engines that already support iterators.
 	StopIteration: window['StopIteration'] || Error('StopIteration'),
 	

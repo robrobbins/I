@@ -1,5 +1,5 @@
 // Inheritance model based on J.Resig's simple inheritance, 
-// appending to the I namespace as I.Class
+// appending to the __i__ namespace as __i__.Class
 (function(I) {
 	var INITIALIZING = false,
 		// straight outta base2
@@ -53,4 +53,4 @@
 		Class.extend = Class.define; // sounds better for inherited classes
 		return Class;
 	};
-}(I));
+}(__i__));
