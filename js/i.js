@@ -530,7 +530,6 @@ window.define = function(/* var_args */) {
 		} else throw Error('Anonymous define with only a function unsupported'); 
 		break;
 	case '[object Object]':
-		// FIXME logic for getting filename clientside id not given
 		if(!ns) {
 			throw Error('Anonymous define with only an object unsupported');
 		}

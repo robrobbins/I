@@ -3,6 +3,6 @@
 define('TESTS', ['reallyAwesomeSpec', 'testSpec'], function() {
 	
 	jasmine.getEnv().addReporter(new jasmine.TrivialReporter());
-  jasmine.getEnv().execute();
+ 	jasmine.getEnv().execute();
 
 });
