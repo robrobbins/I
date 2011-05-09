@@ -1,7 +1,10 @@
 __i__.addDependency('js/vendor/bgiframe.js', ['bgiframe'], []);
 __i__.setNoCallback(['bgiframe']);
+__i__.addDependency('js/tests/reallyAwesomeSpec.js', ['reallyAwesomeSpec'], ['TEST.reallyAwesome']);
 __i__.addDependency('js/vendor/dimensions.js', ['dimensions'], []);
 __i__.setNoCallback(['dimensions']);
+__i__.addDependency('js/tests/testSpec.js', ['testSpec'], ['TEST']);
+__i__.addDependency('js/tests/tests.js', ['TESTS'], ['reallyAwesomeSpec', 'testSpec']);
 __i__.addDependency('js/vendor/RML.js', ['RML'], []);
 __i__.setNoCallback(['RML']);
 __i__.addDependency('js/vendor/tooltip.js', ['tooltip'], []);

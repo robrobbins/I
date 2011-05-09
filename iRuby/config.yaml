@@ -25,7 +25,7 @@ depwriter:
   # production you can simply add the folder name here
   exc_dirs: 
     - extensions
-    - js/lib
+    - js/tests/lib
     - js/minified
   # Directory paths (relative to root) where third party javascript files are 
   # that you want added as dependecies. Since these files will not have any 

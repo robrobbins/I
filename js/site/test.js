@@ -4,9 +4,6 @@ __cache__(['tooltip','bgiframe','delegate','dimensions']);
 
 define('TEST',['jQuery','RML','TEST.reallyAwesome'], 
 	function($, RML, awesome) {
-		
-		console.log('TEST callback called');
-		
 		// setup a method to call when tooltips are ready
 		TEST.tooltips = function() {
 			this.show('So, mouse over the "What\'s this for? thing"');
@@ -37,7 +34,7 @@ define('TEST',['jQuery','RML','TEST.reallyAwesome'],
 		});
 	});
 	
-	// as TEST acts as an entry point it doesn't need to return anything
-	// return TEST;
+	// always return a value if you provide one via the first arg to define()
+	return TEST;
 	
 });
