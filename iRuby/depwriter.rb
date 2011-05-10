@@ -35,7 +35,7 @@ if Dependencies.resolve_deps
   out = File.open('deps.js', 'w') do |deps|
     matched.each_value {|dep|
       len = DW['rm_dir'].size
-      if len > 0
+      if len > 0 and not dep.is_cdn
         st = dep.filename.index(DW['rm_dir'])
         fn = dep.filename.slice(st + len, dep.filename.size)
       else
