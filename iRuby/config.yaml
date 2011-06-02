@@ -51,7 +51,7 @@ depwriter:
 # 'txt' instance variable so that is what you'll be minifying
 demaximizer:
   url: 'http://closure-compiler.appspot.com/compile' 
-  comp_level: SIMPLE_OPTIMIZATIONS
+  comp_level: WHITESPACE_ONLY
   output_format: text
   output_info: compiled_code
   min_suffix: .min

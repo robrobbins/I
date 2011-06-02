@@ -9,7 +9,7 @@ define('TEST',['jQuery','RML','TEST.reallyAwesome'],
 			this.show('So, mouse over the "What\'s this for? thing"');
 			$("#hovered").tooltip({ 
 				bodyHandler: function() { 
-					return "ITS FOR A TOOLTIP!!!";
+					return RML.p("ITS FOR A TOOLTIP!!!");
 				}, 
 				showURL: false
 	   });

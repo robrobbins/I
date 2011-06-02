@@ -43,23 +43,28 @@ if Dependencies.resolve_deps
         fn = dep.filename
       end
       # write deps with [min_suffix]?
-      if DW['demaximize'] and not dep.is_cdn and not dep.is_vendor
-        deps.puts "I.addDependency('#{dep.rename(fn, true)}', #{dep.provides}, #{dep.requires});"
-        # move to root since all filenames are relative to it
-        puts "moving #{I_ROOT_ABS}"
-        Dir.chdir(I_ROOT_ABS)
-        puts "moving to #{File.dirname(dep.filename)}"
-        Dir.chdir(File.dirname(dep.filename))
-        puts "writing min file"
-        min = File.open(dep.rename(fn, false), 'w') {|m| m.puts dep.minify()}
-        # go back to the i_dir
-        puts "moving back to #{I_DIR_ABS}"
-        Dir.chdir(I_DIR_ABS)
+      if DW['demaximize']
+        if not dep.is_cdn and not dep.is_vendor # one of ours
+          deps.puts "__i__.addDependency('#{dep.rename(fn, true)}', #{dep.provides}, #{dep.requires});"
+          # move to root since all filenames are relative to it
+          puts "moving #{I_ROOT_ABS}"
+          Dir.chdir(I_ROOT_ABS)
+          puts "moving to #{File.dirname(dep.filename)}"
+          Dir.chdir(File.dirname(dep.filename))
+          puts "writing min file"
+          min = File.open(dep.rename(fn, false), 'w') {|m| m.puts dep.minify()}
+          # go back to the i_dir
+          puts "moving back to #{I_DIR_ABS}"
+          Dir.chdir(I_DIR_ABS)
+        elsif dep.is_cdn or dep.is_vendor # third party or cdn-hosted
+          deps.puts "__i__.addDependency('#{fn}', #{dep.provides}, #{dep.requires});"
+        end
       else
         deps.puts "__i__.addDependency('#{fn}', #{dep.provides}, #{dep.requires});"
-        if dep.is_cdn or dep.is_vendor or dep.no_callback
-          deps.puts "__i__.setNoCallback(#{dep.provides});"
-        end
+      end
+      # set a noCallback designation where appropriate
+      if dep.is_cdn or dep.is_vendor or dep.no_callback
+        deps.puts "__i__.setNoCallback(#{dep.provides});"
       end
     }
   end

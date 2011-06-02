@@ -470,7 +470,7 @@ __i__.writeScripts = function() {
 /**
  * Writes a script tag if 
  * that script hasn't already been added to the document.	
- * @param {Object} config Hash of attributes
+ * @param {String} src Path to the dependency
  * @private
  */
 __i__.writeScriptTag = function(src) {
